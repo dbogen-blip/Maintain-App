@@ -10,13 +10,13 @@ import './Home.css'
 
 function categoryIcon(category) {
   const c = (category || '').toLowerCase()
-  if (c === 'bil' || c === 'mc') return 'car'
+  if (c === 'bil' || c === 'mc' || c === 'mc/atv') return 'car'
   if (c === 'båt' || c === 'bat') return 'boat'
   if (c === 'hus' || c === 'hage') return 'home'
   return 'wrench'
 }
 
-const COMMON_CATEGORIES = ['Bil', 'Båt', 'Hus', 'Hage', 'Sykkel', 'MC', 'Verktøy']
+const COMMON_CATEGORIES = ['Bil', 'Båt', 'Hus', 'Hage', 'Sykkel', 'MC/ATV', 'Verktøy']
 
 export default function Templates({ onBack, onOpen }) {
   const [items, setItems] = useState([])

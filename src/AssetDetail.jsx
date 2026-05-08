@@ -301,7 +301,7 @@ export default function AssetDetail({ assetId, onBack }) {
               Vedlikeholdskalender
             </Button>
           )}
-          {(asset.category === 'Bil' || asset.category === 'MC') && (
+          {(asset.category === 'Bil' || asset.category === 'MC/ATV') && (
             <Button variant="secondary" icon="car" onClick={() => setShowHousePicker(true)}>
               Vedlikeholdskalender
             </Button>
@@ -359,7 +359,7 @@ export default function AssetDetail({ assetId, onBack }) {
       {showHousePicker && asset?.category === 'Hus' && (
         <HouseTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
       )}
-      {showHousePicker && (asset?.category === 'Bil' || asset?.category === 'MC') && (
+      {showHousePicker && (asset?.category === 'Bil' || asset?.category === 'MC/ATV') && (
         <CarTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
       )}
       {showPublish && (

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   if (karosseri === 'SA') category = 'Bobil'
   else if (/^M/.test(typeKode))  category = 'Bil'
   else if (/^N/.test(typeKode))  category = 'Bil'
-  else if (/^L/.test(typeKode))  category = 'MC'
+  else if (/^L/.test(typeKode))  category = 'MC/ATV'
   else if (/^O/.test(typeKode))  category = 'Tilhenger'
 
   // Tekniske data til beskrivelse

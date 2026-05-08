@@ -4,7 +4,7 @@ const SLUGS = {
   'Hus':                            'hus',
   'Hage':                           'hage',
   'Sykkel':                         'sykkel',
-  'MC':                             'mc',
+  'MC/ATV':                         'mc',
   'Elektriske og manuelle verktøy': 'verktoy',
   'Bensindrevne verktøy':           'bensindrevet',
   'Leilighet':                      'leilighet',

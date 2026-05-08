@@ -7,7 +7,7 @@ import Button from '../components/Button'
 import FileUpload from '../components/FileUpload'
 
 export default function LogForm({ task, assetId, assetCategory, onClose, onSaved }) {
-  const showKm = assetCategory === 'Bil' || assetCategory === 'MC'
+  const showKm = assetCategory === 'Bil' || assetCategory === 'MC/ATV'
   const [form, setForm] = useState({
     performed_on: new Date().toISOString().slice(0, 10),
     cost: '',

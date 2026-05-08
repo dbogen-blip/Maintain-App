@@ -10,7 +10,7 @@ import FileUpload from '../components/FileUpload'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
 const CATEGORIES = [
-  'Bil', 'MC', 'Båt', 'Tilhenger', 'Campingvogn', 'Bobil',
+  'Bil', 'MC/ATV', 'Båt', 'Tilhenger', 'Campingvogn', 'Bobil',
   'Hus', 'Leilighet', 'Hytte',
   'Hage', 'Sykkel',
   'Elektriske og manuelle verktøy', 'Bensindrevne verktøy', 'Annet',
