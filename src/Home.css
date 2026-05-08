@@ -44,16 +44,21 @@
 .topbar-nav-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   background: none;
   border: none;
   padding: var(--space-2) var(--space-3);
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-family: inherit;
   font-weight: var(--font-weight-medium);
   color: var(--color-text-muted);
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 .topbar-nav-btn:hover { background: var(--color-surface-alt); color: var(--color-text); }

@@ -41,6 +41,10 @@ function assetStatus(tasks) {
 }
 
 export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onSignOut, user }) {
+
+  function handleSignOut() {
+    if (window.confirm('Er du sikker på at du vil logge ut?')) onSignOut()
+  }
   const [assets, setAssets]         = useState([])
   const [doneCount, setDoneCount]   = useState(0)
   const [loading, setLoading]       = useState(true)
@@ -144,13 +148,13 @@ export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onS
           <span className="home-brand-name">Maintain</span>
         </div>
         <nav className="home-topbar-nav">
-          <button className="topbar-nav-btn" onClick={onOpenTemplates}>
+          <button type="button" className="topbar-nav-btn" onClick={onOpenTemplates}>
             <Icon name="search" size={16} /><span className="nav-label">Bibliotek</span>
           </button>
-          <button className="topbar-nav-btn" onClick={onOpenSettings}>
+          <button type="button" className="topbar-nav-btn" onClick={onOpenSettings}>
             <Icon name="settings" size={16} /><span className="nav-label">Innstillinger</span>
           </button>
-          <button className="topbar-nav-btn topbar-nav-btn--muted" onClick={onSignOut}>
+          <button type="button" className="topbar-nav-btn topbar-nav-btn--muted" onClick={handleSignOut}>
             <Icon name="logout" size={16} /><span className="nav-label">Logg ut</span>
           </button>
         </nav>
