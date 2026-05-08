@@ -1,0 +1,87 @@
+.upload { display: flex; flex-direction: column; gap: var(--space-2); }
+.upload-input { display: none; }
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  align-self: flex-start;
+}
+.upload-btn:hover { background: var(--color-surface-alt); border-color: var(--color-primary-500); color: var(--color-primary-600); }
+.upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.upload-hint { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0; }
+
+.upload-list {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.upload-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+}
+
+.upload-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.upload-thumb-doc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.upload-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.upload-meta a {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.upload-meta a:hover { color: var(--color-primary-600); text-decoration: underline; }
+.upload-size { font-size: var(--font-size-xs); color: var(--color-text-soft); }
+
+.upload-delete {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.upload-delete:hover { background: var(--color-danger-50); color: var(--color-danger-600); }

@@ -10,7 +10,11 @@ interface DueTask {
   title: string
   next_due: string
   asset_id: string
-  asset: { name: string; user_id: string }
+  asset: { name: string; user_id: string } | { name: string; user_id: string }[]
+}
+
+function normalizeAsset(a: DueTask['asset']) {
+  return Array.isArray(a) ? a[0] : a
 }
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -21,11 +25,12 @@ const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:noreply@maintain.
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') ?? 'Maintain <onboarding@resend.dev>'
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? ''
+// Sett DEBUG=1 i Edge Function-secrets for å få debug-felter i responsen.
+const DEBUG = Deno.env.get('DEBUG') === '1'
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE)
 
 Deno.serve(async (req) => {
-  // Auth: enten Bearer CRON_SECRET (fra pg_cron) eller service-role nøkkel (manuell test)
   const auth = req.headers.get('Authorization') ?? ''
   const provided = auth.replace(/^Bearer\s+/i, '')
   if (!CRON_SECRET || (provided !== CRON_SECRET && provided !== SERVICE_ROLE)) {
@@ -39,8 +44,7 @@ Deno.serve(async (req) => {
   const today = new Date().toISOString().slice(0, 10)
   const horizon = new Date(Date.now() + 60 * 86400 * 1000).toISOString().slice(0, 10)
 
-  // 1) Finn alle oppgaver som forfaller innen 60 dager
-  const { data: dueTasks, error: tasksErr } = await supabase
+  const { data: dueTasksRaw, error: tasksErr } = await supabase
     .from('tasks')
     .select('id, title, next_due, asset_id, asset:assets!inner(name, user_id)')
     .not('next_due', 'is', null)
@@ -48,34 +52,36 @@ Deno.serve(async (req) => {
     .returns<DueTask[]>()
   if (tasksErr) return jsonError(tasksErr.message, 500)
 
-  if (!dueTasks || dueTasks.length === 0) {
+  if (!dueTasksRaw || dueTasksRaw.length === 0) {
     return Response.json({ ok: true, message: 'Ingen oppgaver innen horisont', push: 0, email: 0 })
   }
 
-  const userIds = [...new Set(dueTasks.map((t) => t.asset.user_id))]
+  // Normaliser asset (PostgREST kan returnere object eller array)
+  const dueTasks = dueTasksRaw.map((t) => ({ ...t, asset: normalizeAsset(t.asset) }))
 
-  // 2) Hent preferanser
+  const userIds = [...new Set(dueTasks.map((t) => t.asset?.user_id).filter(Boolean))]
+
   const { data: prefsArr } = await supabase
     .from('notification_preferences')
     .select('*')
     .in('user_id', userIds)
   const prefsByUser = new Map((prefsArr ?? []).map((p) => [p.user_id, p]))
 
-  // 3) Filtrer per bruker basert på lead_time_days
-  const dueByUser = new Map<string, DueTask[]>()
+  const dueByUser = new Map<string, typeof dueTasks>()
   for (const t of dueTasks) {
-    const pref = prefsByUser.get(t.asset.user_id)
+    const userId = t.asset?.user_id
+    if (!userId) continue
+    const pref = prefsByUser.get(userId)
     if (!pref) continue
     const daysUntil = Math.round(
       (new Date(t.next_due).getTime() - new Date(today).getTime()) / 86400000
     )
     if (daysUntil > pref.lead_time_days) continue
-    const list = dueByUser.get(t.asset.user_id) ?? []
+    const list = dueByUser.get(userId) ?? []
     list.push(t)
-    dueByUser.set(t.asset.user_id, list)
+    dueByUser.set(userId, list)
   }
 
-  // 4) Hent push-abonnement
   const { data: subs } = await supabase
     .from('push_subscriptions')
     .select('*')
@@ -87,7 +93,6 @@ Deno.serve(async (req) => {
     subsByUser.set(s.user_id, list)
   }
 
-  // 5) Allerede sendte i dag (dedupe)
   const { data: sentToday } = await supabase
     .from('notifications_sent')
     .select('task_id, channel, due_date')
@@ -96,7 +101,6 @@ Deno.serve(async (req) => {
     (sentToday ?? []).map((s) => `${s.task_id}|${s.channel}|${s.due_date}`)
   )
 
-  // 6) Hent e-postadresser
   const emailByUser = new Map<string, string>()
   for (const userId of userIds) {
     const { data } = await supabase.auth.admin.getUserById(userId)
@@ -110,7 +114,6 @@ Deno.serve(async (req) => {
   for (const [userId, tasks] of dueByUser) {
     const pref = prefsByUser.get(userId)!
 
-    // ===== PUSH =====
     if (pref.push_enabled) {
       const userSubs = subsByUser.get(userId) ?? []
       for (const t of tasks) {
@@ -123,7 +126,7 @@ Deno.serve(async (req) => {
             await webpush.sendNotification(
               { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
               JSON.stringify({
-                title: `Vedlikehold: ${t.asset.name}`,
+                title: `Vedlikehold: ${t.asset?.name ?? ''}`,
                 body: `${t.title} forfaller ${t.next_due}`,
                 tag: `task-${t.id}`,
                 url: '/',
@@ -150,7 +153,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ===== EMAIL (digest per bruker) =====
     if (pref.email_enabled && RESEND_KEY) {
       const email = emailByUser.get(userId)
       if (!email) continue
@@ -166,13 +168,10 @@ Deno.serve(async (req) => {
           ${unsent
             .map(
               (t) =>
-                `<li><strong>${escape(t.asset.name)}</strong>: ${escape(t.title)} — forfaller ${t.next_due}</li>`
+                `<li><strong>${escapeHtml(t.asset?.name ?? '')}</strong>: ${escapeHtml(t.title)} — forfaller ${t.next_due}</li>`
             )
             .join('')}
         </ul>
-        <p style="font-family: system-ui; color: #666; font-size: 12px">
-          Du mottar denne fordi du har e-postvarsler skrudd på i Maintain.
-        </p>
       `
 
       try {
@@ -189,9 +188,7 @@ Deno.serve(async (req) => {
             html,
           }),
         })
-        if (!resp.ok) {
-          throw new Error(`Resend ${resp.status}: ${await resp.text()}`)
-        }
+        if (!resp.ok) throw new Error(`Resend ${resp.status}: ${await resp.text()}`)
         emailSent++
         for (const t of unsent) {
           await supabase.from('notifications_sent').insert({
@@ -207,16 +204,34 @@ Deno.serve(async (req) => {
     }
   }
 
-  return Response.json({
+  const body: Record<string, unknown> = {
     ok: true,
     push: pushSent,
     email: emailSent,
     users: dueByUser.size,
     errors,
-  })
+  }
+  if (DEBUG) {
+    body.debug = {
+      dueTasksFound: dueTasks.length,
+      userIdsCount: userIds.length,
+      prefsByUserCount: prefsByUser.size,
+      subsByUserCount: subsByUser.size,
+      sentTodayCount: sentSet.size,
+      dueByUserDetail: [...dueByUser.entries()].map(([uid, ts]) => ({
+        user_id: uid,
+        task_count: ts.length,
+        tasks: ts.map((t) => ({ id: t.id, title: t.title, next_due: t.next_due })),
+        pref_push_enabled: prefsByUser.get(uid)?.push_enabled,
+        pref_lead_time: prefsByUser.get(uid)?.lead_time_days,
+        sub_count: (subsByUser.get(uid) ?? []).length,
+      })),
+    }
+  }
+  return Response.json(body)
 })
 
-function escape(s: string) {
+function escapeHtml(s: string) {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
