@@ -126,20 +126,17 @@ export default function AssetDetail({ assetId, onBack }) {
     const isOpen = expanded[task.id]
     return (
       <Card key={task.id} className="task-card" padding={4}>
-        <div className="task-head">
-          <button
-            className="task-toggle"
-            onClick={() => setExpanded(e => ({ ...e, [task.id]: !e[task.id] }))}
-            aria-label={isOpen ? 'Skjul detaljer' : 'Vis detaljer'}
-          >
+        <div
+          className="task-head"
+          onClick={() => setExpanded(e => ({ ...e, [task.id]: !e[task.id] }))}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="task-toggle" aria-hidden="true">
             <Icon name={isOpen ? 'chevronDown' : 'chevronRight'} size={18} />
-          </button>
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-              <h3
-                style={{ margin: 0, cursor: 'pointer' }}
-                onClick={() => setExpanded(e => ({ ...e, [task.id]: !e[task.id] }))}
-              >{task.title}</h3>
+              <h3 style={{ margin: 0 }}>{task.title}</h3>
               <Badge variant={badge.variant}>{badge.text}</Badge>
             </div>
             <div className="task-meta">
@@ -292,7 +289,7 @@ export default function AssetDetail({ assetId, onBack }) {
         </div>
       </Card>
 
-      <div className="row" style={{ justifyContent: 'space-between', margin: 'var(--space-6) 0 var(--space-3)' }}>
+      <div className="task-section-header" style={{ margin: 'var(--space-6) 0 var(--space-3)', alignItems: 'center' }}>
         <h2>Vedlikeholdsoppgaver</h2>
         <div className="row">
           {asset.category === 'Hus' && (
