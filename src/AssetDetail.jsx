@@ -262,9 +262,9 @@ export default function AssetDetail({ assetId, onBack }) {
             : <img {...categoryImgProps(asset.category)} alt="" />}
         </div>
         <div className="detail-hero-body">
-          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h1>{asset.name}</h1>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '30ch' }}>{asset.name}</h1>
               <div className="row" style={{ marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {asset.category && <Badge>{asset.category}</Badge>}
                 {asset.purchased_at && <Badge variant="neutral">Kjøpt {asset.purchased_at}</Badge>}
@@ -275,9 +275,15 @@ export default function AssetDetail({ assetId, onBack }) {
                 variant="secondary"
                 icon={publishedTemplate ? 'check' : 'upload'}
                 onClick={() => setShowPublish(true)}
-              />
-              <Button variant="secondary" icon="edit" onClick={() => setEditAsset(true)} />
-              <Button variant="danger" icon="trash" onClick={deleteAsset} />
+              >
+                <span className="asset-btn-label">{publishedTemplate ? 'Publisert' : 'Publiser'}</span>
+              </Button>
+              <Button variant="secondary" icon="edit" onClick={() => setEditAsset(true)}>
+                <span className="asset-btn-label">Rediger</span>
+              </Button>
+              <Button variant="danger" icon="trash" onClick={deleteAsset}>
+                <span className="asset-btn-label">Slett</span>
+              </Button>
             </div>
           </div>
           {asset.description && (
