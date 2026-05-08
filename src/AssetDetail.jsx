@@ -13,6 +13,7 @@ import TaskForm from './forms/TaskForm'
 import LogForm from './forms/LogForm'
 import PublishModal from './forms/PublishModal'
 import HouseTaskPicker from './HouseTaskPicker'
+import CarTaskPicker from './CarTaskPicker'
 import { getTemplateForAsset } from './templates'
 import './AssetDetail.css'
 
@@ -81,7 +82,7 @@ export default function AssetDetail({ assetId, onBack }) {
           *,
           attachments:task_attachments(id, file_path, file_name, mime_type, size_bytes),
           maintenance_logs (
-            id, performed_on, notes, cost,
+            id, performed_on, notes, cost, km_reading,
             attachments:maintenance_log_attachments(id, file_path, file_name, mime_type, size_bytes)
           )
         `)
@@ -200,7 +201,10 @@ export default function AssetDetail({ assetId, onBack }) {
                     <li key={log.id} className="log-item">
                       <div className="row" style={{ justifyContent: 'space-between' }}>
                         <strong>{log.performed_on}</strong>
-                        {log.cost != null && <span className="muted">kr {log.cost}</span>}
+                        <span className="muted" style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                          {log.km_reading != null && <span>{log.km_reading.toLocaleString('nb-NO')} km</span>}
+                          {log.cost != null && <span>kr {log.cost}</span>}
+                        </span>
                       </div>
                       {log.notes && <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--color-text-muted)' }}>{log.notes}</p>}
                       {log.attachments?.length > 0 && (
@@ -297,6 +301,11 @@ export default function AssetDetail({ assetId, onBack }) {
               Vedlikeholdskalender
             </Button>
           )}
+          {(asset.category === 'Bil' || asset.category === 'MC') && (
+            <Button variant="secondary" icon="car" onClick={() => setShowHousePicker(true)}>
+              Vedlikeholdskalender
+            </Button>
+          )}
           <Button icon="plus" onClick={() => setEditTask({})}>Ny oppgave</Button>
         </div>
       </div>
@@ -338,9 +347,20 @@ export default function AssetDetail({ assetId, onBack }) {
 
       {editAsset && <AssetForm asset={asset} onClose={() => setEditAsset(false)} onSaved={load} />}
       {editTask  && <TaskForm assetId={assetId} task={editTask.id ? editTask : null} onClose={() => setEditTask(null)} onSaved={load} />}
-      {logTask   && <LogForm task={logTask} assetId={assetId} onClose={() => setLogTask(null)} onSaved={load} />}
-      {showHousePicker && (
+      {logTask && (
+        <LogForm
+          task={logTask}
+          assetId={assetId}
+          assetCategory={asset?.category}
+          onClose={() => setLogTask(null)}
+          onSaved={load}
+        />
+      )}
+      {showHousePicker && asset?.category === 'Hus' && (
         <HouseTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
+      )}
+      {showHousePicker && (asset?.category === 'Bil' || asset?.category === 'MC') && (
+        <CarTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
       )}
       {showPublish && (
         <PublishModal asset={asset} onClose={() => setShowPublish(false)} onPublished={load} />

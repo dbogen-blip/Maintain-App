@@ -6,10 +6,12 @@ import { Input, Textarea } from '../components/Input'
 import Button from '../components/Button'
 import FileUpload from '../components/FileUpload'
 
-export default function LogForm({ task, assetId, onClose, onSaved }) {
+export default function LogForm({ task, assetId, assetCategory, onClose, onSaved }) {
+  const showKm = assetCategory === 'Bil' || assetCategory === 'MC'
   const [form, setForm] = useState({
     performed_on: new Date().toISOString().slice(0, 10),
     cost: '',
+    km_reading: '',
     notes: '',
   })
   const [saving, setSaving] = useState(false)
@@ -84,6 +86,7 @@ export default function LogForm({ task, assetId, onClose, onSaved }) {
         asset_id: assetId,
         performed_on: form.performed_on || new Date().toISOString().slice(0, 10),
         cost: form.cost ? Number(form.cost) : null,
+        km_reading: form.km_reading ? Number(form.km_reading) : null,
         notes: form.notes || null,
       }
       if (logId) {
@@ -92,6 +95,7 @@ export default function LogForm({ task, assetId, onClose, onSaved }) {
           .update({
             performed_on: payload.performed_on,
             cost: payload.cost,
+            km_reading: payload.km_reading,
             notes: payload.notes,
           })
           .eq('id', logId)
@@ -134,14 +138,25 @@ export default function LogForm({ task, assetId, onClose, onSaved }) {
         value={form.performed_on}
         onChange={e => setField('performed_on', e.target.value)}
       />
-      <Input
-        label="Kostnad (NOK)"
-        type="number"
-        step="0.01"
-        placeholder="f.eks. 1250"
-        value={form.cost}
-        onChange={e => setField('cost', e.target.value)}
-      />
+      <div style={{ display: 'grid', gridTemplateColumns: showKm ? '1fr 1fr' : '1fr', gap: 'var(--space-3)' }}>
+        <Input
+          label="Kostnad (NOK)"
+          type="number"
+          step="0.01"
+          placeholder="f.eks. 1250"
+          value={form.cost}
+          onChange={e => setField('cost', e.target.value)}
+        />
+        {showKm && (
+          <Input
+            label="Km-stand"
+            type="number"
+            placeholder="f.eks. 85000"
+            value={form.km_reading}
+            onChange={e => setField('km_reading', e.target.value)}
+          />
+        )}
+      </div>
       <Textarea
         label="Notater"
         placeholder="Hva ble gjort, observasjoner ..."
