@@ -55,6 +55,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [verifying, setVerifying] = useState(false)
   const [error, setError] = useState(null)
 
   function switchMode(m) {
@@ -72,6 +74,14 @@ export default function Login() {
     setLoading(false)
     if (error) setError(error.message)
     else setSent(true)
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault()
+    setVerifying(true); setError(null)
+    const { error } = await supabase.auth.verifyOtp({ email, token: otp.trim(), type: 'email' })
+    setVerifying(false)
+    if (error) setError('Feil kode eller koden er utløpt. Prøv igjen.')
   }
 
   async function handlePassword(e) {
@@ -111,25 +121,67 @@ export default function Login() {
   if (sent) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', background: 'var(--color-bg)' }}>
-        <Card padding={6} style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+        <Card padding={6} style={{ width: '100%', maxWidth: 400 }}>
           {logo}
-          <div style={{
-            display: 'inline-flex', width: 48, height: 48, borderRadius: '50%',
-            background: 'var(--color-success-50)', color: 'var(--color-success)',
-            alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-3)',
-          }}>
-            <Icon name="check" size={24} />
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
+            <div style={{
+              display: 'inline-flex', width: 48, height: 48, borderRadius: '50%',
+              background: 'var(--color-success-50)', color: 'var(--color-success)',
+              alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-3)',
+            }}>
+              <Icon name="mail" size={24} />
+            </div>
+            <p style={{ marginBottom: 'var(--space-1)', fontWeight: 'var(--font-weight-semibold)' }}>
+              Sjekk e-posten din
+            </p>
+            <p className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>
+              Vi sendte en 6-sifret kode til <strong>{email}</strong>.
+              Skriv den inn her — ingen grunn til å bytte enhet.
+            </p>
           </div>
-          <p style={{ marginBottom: 'var(--space-2)' }}>Sjekk e-posten din</p>
-          <p className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-            {isSignUp
-              ? <>Vi sendte en bekreftelseslenke til <strong>{email}</strong>. Har du allerede en konto, logg inn med innloggingslenke og sett passord i Innstillinger.</>
-              : <>Vi sendte en innloggingslenke til <strong>{email}</strong>.</>
-            }
+
+          <form onSubmit={handleVerifyOtp}>
+            <div className="field">
+              <label>Engangskode</label>
+              <input
+                className="input"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder="123456"
+                value={otp}
+                onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError(null) }}
+                autoFocus
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: 28,
+                  letterSpacing: '0.25em',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              />
+            </div>
+            {error && (
+              <p style={{ color: 'var(--color-danger-700)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)' }}>
+                {error}
+              </p>
+            )}
+            <Button type="submit" loading={verifying} style={{ width: '100%' }} disabled={otp.length < 6}>
+              Logg inn
+            </Button>
+          </form>
+
+          <p className="muted" style={{ fontSize: 'var(--font-size-xs)', textAlign: 'center', marginTop: 'var(--space-4)' }}>
+            Kom ikke e-post?{' '}
+            <button
+              type="button"
+              onClick={() => { setSent(false); setOtp(''); setError(null) }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'inherit', padding: 0, fontFamily: 'inherit', textDecoration: 'underline' }}
+            >
+              Send på nytt
+            </button>
           </p>
-          <Button variant="ghost" onClick={() => setSent(false)} style={{ marginTop: 'var(--space-4)' }}>
-            Tilbake
-          </Button>
         </Card>
       </div>
     )
