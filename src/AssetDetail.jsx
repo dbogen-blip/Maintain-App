@@ -270,16 +270,14 @@ export default function AssetDetail({ assetId, onBack }) {
                 {asset.purchased_at && <Badge variant="neutral">Kjøpt {asset.purchased_at}</Badge>}
               </div>
             </div>
-            <div className="row" style={{ flexWrap: 'wrap' }}>
+            <div className="row" style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
               <Button
                 variant="secondary"
                 icon={publishedTemplate ? 'check' : 'upload'}
                 onClick={() => setShowPublish(true)}
-              >
-                {publishedTemplate ? 'Publisert' : 'Publiser'}
-              </Button>
-              <Button variant="secondary" icon="edit" onClick={() => setEditAsset(true)}>Rediger</Button>
-              <Button variant="danger" icon="trash" onClick={deleteAsset}>Slett</Button>
+              />
+              <Button variant="secondary" icon="edit" onClick={() => setEditAsset(true)} />
+              <Button variant="danger" icon="trash" onClick={deleteAsset} />
             </div>
           </div>
           {asset.description && (

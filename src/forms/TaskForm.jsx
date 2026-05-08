@@ -192,7 +192,7 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
               >{label}</button>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', alignItems: 'start' }}>
             <Input
               label="Intervall (dager)"
               type="number"
