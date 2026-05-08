@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#0F172A"/>
-  <g transform="translate(256 256) rotate(45) translate(-128 -128)" fill="none" stroke="#22C55E" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(256 256) rotate(45) translate(-128 -128)" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
     <path d="M157 67c-11 11-11 28 0 39l17 17c11 11 28 11 39 0l40-40a64 64 0 01-85 85l-74 74a23 23 0 01-32-32l74-74a64 64 0 0185-85l-40 40z" transform="translate(-12 -12) scale(1.0)"/>
   </g>
-  <text x="256" y="400" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="56" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="-1">Maintain</text>
 </svg>
