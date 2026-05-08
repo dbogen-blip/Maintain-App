@@ -270,7 +270,7 @@ export default function AssetDetail({ assetId, onBack }) {
                 {asset.purchased_at && <Badge variant="neutral">Kjøpt {asset.purchased_at}</Badge>}
               </div>
             </div>
-            <div className="row" style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
+            <div className="row asset-hero-actions" style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
               <Button
                 variant="secondary"
                 icon={publishedTemplate ? 'check' : 'upload'}

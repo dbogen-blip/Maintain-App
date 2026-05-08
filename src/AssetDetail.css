@@ -155,4 +155,13 @@
 
 @media (max-width: 560px) {
   .asset-btn-label { display: none; }
+  .asset-hero-actions .btn {
+    height: 28px;
+    min-width: unset;
+    padding: 0 var(--space-2);
+  }
+  .asset-hero-actions .btn svg {
+    width: 14px;
+    height: 14px;
+  }
 }
