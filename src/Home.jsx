@@ -145,13 +145,13 @@ export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onS
         </div>
         <nav className="home-topbar-nav">
           <button className="topbar-nav-btn" onClick={onOpenTemplates}>
-            <Icon name="search" size={16} />Bibliotek
+            <Icon name="search" size={16} /><span className="nav-label">Bibliotek</span>
           </button>
           <button className="topbar-nav-btn" onClick={onOpenSettings}>
-            <Icon name="settings" size={16} />Innstillinger
+            <Icon name="settings" size={16} /><span className="nav-label">Innstillinger</span>
           </button>
           <button className="topbar-nav-btn topbar-nav-btn--muted" onClick={onSignOut}>
-            <Icon name="logout" size={16} />Logg ut
+            <Icon name="logout" size={16} /><span className="nav-label">Logg ut</span>
           </button>
         </nav>
       </header>

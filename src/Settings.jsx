@@ -155,7 +155,7 @@ export default function Settings({ onBack }) {
           checked={prefs.push_enabled}
           onChange={e => setPrefs({ ...prefs, push_enabled: e.target.checked })}
         />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
           <Input
             label="Varsle X dager før forfall"
             type="number"
