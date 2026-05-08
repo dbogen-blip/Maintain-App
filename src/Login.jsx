@@ -135,7 +135,7 @@ export default function Login() {
               Sjekk e-posten din
             </p>
             <p className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>
-              Vi sendte en 6-sifret kode til <strong>{email}</strong>.
+              Vi sendte en 8-sifret kode til <strong>{email}</strong>.
               Skriv den inn her — ingen grunn til å bytte enhet.
             </p>
           </div>
@@ -148,8 +148,8 @@ export default function Login() {
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                maxLength={6}
-                placeholder="123456"
+                maxLength={8}
+                placeholder="12345678"
                 value={otp}
                 onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError(null) }}
                 autoFocus
@@ -167,7 +167,7 @@ export default function Login() {
                 {error}
               </p>
             )}
-            <Button type="submit" loading={verifying} style={{ width: '100%' }} disabled={otp.length < 6}>
+            <Button type="submit" loading={verifying} style={{ width: '100%' }} disabled={otp.length < 6 || verifying}>
               Logg inn
             </Button>
           </form>
