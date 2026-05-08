@@ -13,12 +13,12 @@ export default function App() {
   const [route, setRoute] = useState({ name: 'home' })
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null)
-      setLoading(false)
-    })
+    // onAuthStateChange fires with INITIAL_SESSION on mount (including when
+    // there's a token in the URL hash after a magic-link click), so we use it
+    // as the single source of truth and skip the separate getUser() call.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setLoading(false)
     })
     return () => sub.subscription.unsubscribe()
   }, [])
