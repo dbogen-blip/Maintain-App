@@ -17,7 +17,7 @@ const CATEGORIES = [
 ]
 
 // Norsk registreringsnummer: 2 bokstaver + 5 siffer (med eller uten mellomrom)
-const REGNR_RE = /^[A-Za-z]{2}\s?\d{5}$/
+const REGNR_RE = /^[A-Za-z]{2}\s?\d{4,5}$/
 
 export default function AssetForm({ asset, onClose, onSaved }) {
   const isEdit = !!asset
