@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { getTemplate, forkTemplate, bumpTemplateView, toggleStar, getUserStarredIds } from './templates'
 import { publicUrl, isImage } from './storage'
+import { categoryImgProps } from './categoryImages'
 import { supabase } from './supabaseClient'
 import Card from './components/Card'
 import Button from './components/Button'
@@ -105,11 +106,11 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
       <Button variant="ghost" icon="arrowLeft" onClick={onBack}>Tilbake til biblioteket</Button>
 
       <Card className="detail-hero" padding={0}>
-        {tpl.image_url && (
-          <div className="detail-hero-image">
-            <img src={tpl.image_url} alt="" />
-          </div>
-        )}
+        <div className="detail-hero-image">
+          {tpl.image_url
+            ? <img src={tpl.image_url} alt="" />
+            : <img {...categoryImgProps(tpl.category)} alt="" />}
+        </div>
         <div className="detail-hero-body">
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
             <div>

@@ -11,9 +11,13 @@ import { supabase } from './supabaseClient'
 
 const BUCKET = 'asset-images'
 
-export async function publishAsset(assetId) {
+// includeImage: if true the asset's cover photo is copied to the template;
+// if false the template gets image_url = NULL and the library falls back to
+// the standard category image.
+export async function publishAsset(assetId, includeImage = true) {
   const { data, error } = await supabase.rpc('publish_asset_as_template', {
     p_asset_id: assetId,
+    p_include_image: includeImage,
   })
   if (error) throw error
   return data // template id

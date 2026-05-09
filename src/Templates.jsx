@@ -3,6 +3,7 @@
 // Each card shows the fork count and star count.
 import { useEffect, useMemo, useState } from 'react'
 import { searchTemplates } from './templates'
+import { categoryImgProps } from './categoryImages'
 import Card from './components/Card'
 import Button from './components/Button'
 import Badge from './components/Badge'
@@ -134,7 +135,7 @@ export default function Templates({ onBack, onOpen }) {
               <div className="asset-cover">
                 {t.image_url
                   ? <img src={t.image_url} alt="" />
-                  : <Icon name={categoryIcon(t.category)} size={32} />}
+                  : <img {...categoryImgProps(t.category)} alt="" />}
               </div>
               <div className="asset-body">
                 <h3>{t.name}</h3>
