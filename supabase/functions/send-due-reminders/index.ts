@@ -129,7 +129,9 @@ Deno.serve(async (req) => {
                 title: `Vedlikehold: ${t.asset?.name ?? ''}`,
                 body: `${t.title} forfaller ${t.next_due}`,
                 tag: `task-${t.id}`,
-                url: '/',
+                // Deep-link to the specific asset so the user lands directly
+                // on the relevant maintenance log when tapping the notification.
+                url: `/?asset=${t.asset_id}`,
               })
             )
             pushSent++

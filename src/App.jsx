@@ -18,7 +18,19 @@ import TemplateDetail from './TemplateDetail.jsx'
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [route, setRoute] = useState({ name: 'home' })
+
+  // Check for a deep-link query param set by push notifications (?asset=ID).
+  // We read it once at startup so tapping a notification opens the right asset.
+  const [route, setRoute] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const assetId = params.get('asset')
+    if (assetId) {
+      // Remove the param from the URL bar without adding a history entry.
+      window.history.replaceState(null, '', window.location.pathname)
+      return { name: 'asset', id: assetId }
+    }
+    return { name: 'home' }
+  })
 
   useEffect(() => {
     // onAuthStateChange fires with INITIAL_SESSION on mount (including when
