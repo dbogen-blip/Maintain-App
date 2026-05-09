@@ -14,6 +14,7 @@ import Icon from './components/Icon'
 import EmptyState from './components/EmptyState'
 import Spinner from './components/Spinner'
 import AssetForm from './forms/AssetForm'
+import InstallPrompt from './components/InstallPrompt'
 import { categoryImgProps } from './categoryImages'
 import './Home.css'
 
@@ -148,6 +149,9 @@ export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onS
 
   return (
     <div>
+      {/* ── Install banner (shown once to non-installed users) ── */}
+      <InstallPrompt />
+
       {/* ── Top bar ── */}
       <header className="home-topbar">
         <div className="home-brand">

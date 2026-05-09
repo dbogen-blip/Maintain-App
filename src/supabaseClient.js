@@ -20,8 +20,10 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    flowType: 'implicit',
-    detectSessionInUrl: true,
-    persistSession: true,
+    flowType: 'implicit',   // magic links work across all devices/browsers
+    detectSessionInUrl: true, // parse #access_token from URL hash on page load
+    persistSession: true,     // store session in localStorage between app opens
+    autoRefreshToken: true,   // silently refresh the JWT before it expires (every ~55 min)
+    storageKey: 'maintain-auth',
   },
 })
