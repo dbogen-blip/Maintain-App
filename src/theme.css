@@ -195,8 +195,15 @@ button { font-family: inherit; }
   padding: var(--space-8) var(--space-6) var(--space-16);
 }
 
+/* Pages without a sticky topbar sit directly below the iOS status bar.
+   home-content is inside the Home topbar which already handles the inset. */
+.container:not(.home-content) {
+  padding-top: calc(var(--space-8) + env(safe-area-inset-top));
+}
+
 @media (max-width: 640px) {
   .container { padding: var(--space-5) var(--space-4) var(--space-12); }
+  .container:not(.home-content) { padding-top: calc(var(--space-5) + env(safe-area-inset-top)); }
 }
 
 /* ── Scrollbar ───────────────────────────────────────────── */
