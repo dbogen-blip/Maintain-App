@@ -28,6 +28,7 @@ import HouseTaskPicker from './HouseTaskPicker'
 import CarTaskPicker from './CarTaskPicker'
 import { getTemplateForAsset } from './templates'
 import ConfirmDialog from './components/ConfirmDialog'
+import Toast from './components/Toast'
 import './AssetDetail.css'
 
 function daysUntil(dateStr) {
@@ -78,6 +79,7 @@ export default function AssetDetail() {
   const [showHousePicker, setShowHousePicker]     = useState(false)
   const [confirmDeleteTask, setConfirmDeleteTask] = useState(null)  // task object | null
   const [confirmDeleteAsset, setConfirmDeleteAsset] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => { load() }, [assetId])
 
@@ -135,6 +137,7 @@ export default function AssetDetail() {
           )
         `)
         .eq('asset_id', assetId)
+        .is('deleted_at', null)
         .order('next_due', { ascending: true, nullsFirst: false }),
       getTemplateForAsset(assetId),
     ])
@@ -158,14 +161,23 @@ export default function AssetDetail() {
     setLoading(false)
   }
 
-  async function deleteTask(taskId) {
-    await supabase.from('tasks').delete().eq('id', taskId)
+  async function deleteTask(task) {
+    const now = new Date().toISOString()
+    await supabase.from('tasks').update({ deleted_at: now }).eq('id', task.id)
     setConfirmDeleteTask(null)
     load()
+    setToast({
+      message: `«${task.title}» er slettet`,
+      undo: async () => {
+        await supabase.from('tasks').update({ deleted_at: null }).eq('id', task.id)
+        load()
+      },
+    })
   }
 
   async function deleteAsset() {
-    await supabase.from('assets').delete().eq('id', assetId)
+    const now = new Date().toISOString()
+    await supabase.from('assets').update({ deleted_at: now }).eq('id', assetId)
     navigate('/')
   }
 
@@ -427,23 +439,25 @@ export default function AssetDetail() {
       <ConfirmDialog
         open={!!confirmDeleteTask}
         title="Slett oppgave"
-        message={`«${confirmDeleteTask?.title}» og all tilhørende historikk slettes permanent. Dette kan ikke angres.`}
-        confirmLabel="Slett oppgave"
+        message={`«${confirmDeleteTask?.title}» flyttes til papirkurven. Du kan angre med Angre-knappen som dukker opp.`}
+        confirmLabel="Slett"
         variant="danger"
-        onConfirm={() => deleteTask(confirmDeleteTask.id)}
+        onConfirm={() => deleteTask(confirmDeleteTask)}
         onClose={() => setConfirmDeleteTask(null)}
       />
 
       {/* Delete asset confirmation */}
       <ConfirmDialog
         open={confirmDeleteAsset}
-        title="Slett eiendel"
-        message={`«${asset?.name}» slettes sammen med alle oppgaver og historikk. Dette kan ikke angres.`}
-        confirmLabel="Slett eiendel"
+        title="Flytt til papirkurv"
+        message={`«${asset?.name}» flyttes til papirkurven. Du kan gjenopprette den i Innstillinger innen 7 dager.`}
+        confirmLabel="Slett"
         variant="danger"
         onConfirm={deleteAsset}
         onClose={() => setConfirmDeleteAsset(false)}
       />
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   )
 }

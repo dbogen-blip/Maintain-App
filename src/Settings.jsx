@@ -13,6 +13,7 @@ import Badge from './components/Badge'
 import Icon from './components/Icon'
 import { Input, Checkbox } from './components/Input'
 import ConfirmDialog from './components/ConfirmDialog'
+import Toast from './components/Toast'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -40,12 +41,48 @@ export default function Settings() {
   //   'confirm2'        → final danger confirm
   const [deleteStep, setDeleteStep] = useState(null)
   const [saveError, setSaveError] = useState(null)
+  const [trashedAssets, setTrashedAssets] = useState([])
+  const [trashLoading, setTrashLoading] = useState(true)
+  const [toast, setToast] = useState(null)
+  const [confirmPurge, setConfirmPurge] = useState(null) // asset object | null
 
   useEffect(() => {
     load()
     refreshPushStatus()
     loadPublishedTemplates()
+    loadTrash()
   }, [])
+
+  async function loadTrash() {
+    setTrashLoading(true)
+    // Assets deleted within the last 7 days (older ones are considered auto-purged)
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 7)
+    const { data } = await supabase
+      .from('assets')
+      .select('id, name, category, deleted_at')
+      .not('deleted_at', 'is', null)
+      .gte('deleted_at', cutoff.toISOString())
+      .order('deleted_at', { ascending: false })
+    setTrashedAssets(data ?? [])
+    setTrashLoading(false)
+  }
+
+  async function restoreAsset(asset) {
+    await supabase.from('assets').update({ deleted_at: null }).eq('id', asset.id)
+    // Also restore any tasks that were soft-deleted as part of this deletion
+    // (tasks deleted independently keep their own deleted_at)
+    setTrashedAssets(prev => prev.filter(a => a.id !== asset.id))
+    setToast({ message: `«${asset.name}» er gjenopprettet` })
+  }
+
+  async function purgeAsset(asset) {
+    // Hard delete — also cascades tasks, logs, attachments via FK
+    await supabase.from('assets').delete().eq('id', asset.id)
+    setTrashedAssets(prev => prev.filter(a => a.id !== asset.id))
+    setConfirmPurge(null)
+    setToast({ message: `«${asset.name}» er slettet permanent` })
+  }
 
   async function loadPublishedTemplates() {
     const { data } = await supabase
@@ -299,6 +336,49 @@ export default function Settings() {
         )}
       </Card>
 
+      {/* Papirkurv */}
+      <Card padding={5} style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="row" style={{ justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+          <h2 style={{ margin: 0 }}>Papirkurv</h2>
+          {trashedAssets.length > 0 && <Badge variant="neutral">{trashedAssets.length}</Badge>}
+        </div>
+        <p className="muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)' }}>
+          Slettede eiendeler kan gjenopprettes innen 7 dager. Etter det slettes de permanent automatisk.
+        </p>
+        {trashLoading ? (
+          <p className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>Laster ...</p>
+        ) : trashedAssets.length === 0 ? (
+          <p className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>Papirkurven er tom.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {trashedAssets.map((a, i) => {
+              const deletedAt = new Date(a.deleted_at)
+              const daysLeft = 7 - Math.floor((Date.now() - deletedAt.getTime()) / 86400000)
+              return (
+                <li
+                  key={a.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                    padding: 'var(--space-3) 0',
+                    borderTop: i > 0 ? '1px solid var(--color-border)' : 'none',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)' }}>{a.name}</div>
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                      {a.category && <span>{a.category} · </span>}
+                      Slettes om {daysLeft} dag{daysLeft !== 1 ? 'er' : ''}
+                    </div>
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => restoreAsset(a)}>Gjenopprett</Button>
+                  <Button size="sm" variant="danger" icon="trash" onClick={() => setConfirmPurge(a)} />
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </Card>
+
       {/* Danger zone — account deletion */}
       <Card padding={5} style={{ borderColor: 'rgba(239,68,68,.25)', marginTop: 'var(--space-4)' }}>
         <h2 style={{ marginBottom: 'var(--space-1)', color: 'var(--color-danger-700)' }}>Slett konto</h2>
@@ -373,6 +453,19 @@ export default function Settings() {
         onConfirm={runDeleteAccount}
         onClose={() => setDeleteStep(null)}
       />
+
+      {/* Permanent purge from trash */}
+      <ConfirmDialog
+        open={!!confirmPurge}
+        title="Slett permanent"
+        message={`«${confirmPurge?.name}» og all tilhørende historikk slettes permanent. Dette kan ikke angres.`}
+        confirmLabel="Slett permanent"
+        variant="danger"
+        onConfirm={() => purgeAsset(confirmPurge)}
+        onClose={() => setConfirmPurge(null)}
+      />
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   )
 }

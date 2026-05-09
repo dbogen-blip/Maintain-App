@@ -83,6 +83,7 @@ export default function Home() {
       supabase
         .from('assets')
         .select('id, name, category, description, image_url, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
+        .is('deleted_at', null)
         .order('name'),
       supabase
         .from('maintenance_logs')
