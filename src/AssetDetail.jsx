@@ -39,7 +39,17 @@ function daysUntil(dateStr) {
   return Math.round((target - today) / 86400000)
 }
 
-function dueBadge(task) {
+function dueBadge(task, currentKm = null) {
+  // km-based task
+  if (task.interval_type === 'km') {
+    if (task.next_due_km == null) return { variant: 'neutral', text: 'Ikke utført' }
+    if (currentKm == null)        return { variant: 'neutral', text: `Forfaller ved ${task.next_due_km.toLocaleString('nb-NO')} km` }
+    const diff = task.next_due_km - currentKm
+    if (diff <= 0)    return { variant: 'danger',  text: `Forfalt med ${(-diff).toLocaleString('nb-NO')} km` }
+    if (diff <= 500)  return { variant: 'warning', text: `Om ${diff.toLocaleString('nb-NO')} km` }
+    return                       { variant: 'success', text: `Om ${diff.toLocaleString('nb-NO')} km` }
+  }
+  // date-based task
   const effectiveDue = task.fixed_due_date ?? task.next_due
   if (!effectiveDue) return { variant: 'neutral', text: 'Ikke utført' }
   const d = daysUntil(effectiveDue)
@@ -71,9 +81,30 @@ export default function AssetDetail() {
 
   useEffect(() => { load() }, [assetId])
 
+  // Latest odometer reading across all task logs for this asset
+  const currentKm = useMemo(() => {
+    let max = null
+    for (const t of tasks) {
+      for (const l of t.maintenance_logs ?? []) {
+        if (l.km_reading != null && (max === null || l.km_reading > max)) max = l.km_reading
+      }
+    }
+    return max
+  }, [tasks])
+
   const taskGroups = useMemo(() => {
     const overdue = [], soon = [], later = [], unplanned = []
     for (const t of tasks) {
+      if (t.interval_type === 'km') {
+        // km tasks: bucket by how far past/ahead of next_due_km
+        if (t.next_due_km == null) { unplanned.push(t); continue }
+        const diff = currentKm != null ? t.next_due_km - currentKm : null
+        if (diff === null)   { unplanned.push(t); continue }
+        if (diff <= 0)        overdue.push(t)
+        else if (diff <= 500) soon.push(t)
+        else                  later.push(t)
+        continue
+      }
       const due = t.fixed_due_date ?? t.next_due
       const d   = due ? daysUntil(due) : null
       if (d === null)   unplanned.push(t)
@@ -139,7 +170,7 @@ export default function AssetDetail() {
   }
 
   function renderTask(task) {
-    const badge  = dueBadge(task)
+    const badge  = dueBadge(task, currentKm)
     const isOpen = expanded[task.id]
     return (
       <Card key={task.id} className="task-card" padding={4}>
@@ -157,13 +188,20 @@ export default function AssetDetail() {
               <Badge variant={badge.variant}>{badge.text}</Badge>
             </div>
             <div className="task-meta">
-              {task.fixed_due_date
+              {task.interval_type === 'km'
+                ? <span><Icon name="car" size={14} /> Hver {task.interval_km?.toLocaleString('nb-NO')} km</span>
+                : task.fixed_due_date
                 ? <span><Icon name="calendar" size={14} /> Fast dato: {task.fixed_due_date}</span>
                 : task.interval_days
                 ? <span><Icon name="refresh" size={14} /> Hver {task.interval_days} dag</span>
                 : null
               }
-              {!task.fixed_due_date && <span><Icon name="clock" size={14} /> Sist: {task.last_done ?? 'aldri'}</span>}
+              {task.interval_type === 'km'
+                ? <span><Icon name="clock" size={14} /> Sist ved: {task.last_done_km != null ? task.last_done_km.toLocaleString('nb-NO') + ' km' : 'aldri'}</span>
+                : !task.fixed_due_date
+                ? <span><Icon name="clock" size={14} /> Sist: {task.last_done ?? 'aldri'}</span>
+                : null
+              }
               {task.priority !== 2 && <span>Prioritet: {priorityLabel(task.priority)}</span>}
               {task.maintenance_logs?.length > 0 && (
                 <span><Icon name="history" size={14} /> {task.maintenance_logs.length} ganger utført</span>
@@ -365,7 +403,7 @@ export default function AssetDetail() {
       )}
 
       {editAsset && <AssetForm asset={asset} onClose={() => setEditAsset(false)} onSaved={load} />}
-      {editTask  && <TaskForm assetId={assetId} task={editTask.id ? editTask : null} onClose={() => setEditTask(null)} onSaved={load} />}
+      {editTask  && <TaskForm assetId={assetId} task={editTask.id ? editTask : null} assetCategory={asset?.category} onClose={() => setEditTask(null)} onSaved={load} />}
       {logTask && (
         <LogForm
           task={logTask}

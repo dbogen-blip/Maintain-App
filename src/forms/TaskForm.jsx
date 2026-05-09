@@ -19,13 +19,23 @@ import Button from '../components/Button'
 import Icon from '../components/Icon'
 import FileUpload from '../components/FileUpload'
 
-export default function TaskForm({ assetId, task, onClose, onSaved }) {
-  const isEdit = !!task
-  const [mode, setMode] = useState(task?.fixed_due_date ? 'multi-fixed' : 'interval')
+// Vehicle categories where km-based intervals make sense
+const KM_CATEGORIES = ['Bil', 'MC/ATV', 'Campingvogn']
+
+export default function TaskForm({ assetId, task, assetCategory, onClose, onSaved }) {
+  const isEdit    = !!task
+  const isVehicle = KM_CATEGORIES.includes(assetCategory)
+
+  const [mode, setMode] = useState(
+    task?.interval_type === 'km' ? 'km' :
+    task?.fixed_due_date         ? 'multi-fixed' : 'interval'
+  )
   const [form, setForm] = useState({
     title:          task?.title         ?? '',
     interval_days:  task?.interval_days ?? 180,
+    interval_km:    task?.interval_km   ?? 15000,
     last_done:      task?.last_done     ?? '',
+    last_done_km:   task?.last_done_km  ?? '',
     priority:       task?.priority      ?? 2,
     description:    task?.description   ?? '',
     notes:          task?.notes         ?? '',
@@ -60,8 +70,12 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
       priority: Number(form.priority) || 2,
     }
     if (mode === 'interval') {
+      payload.interval_type = 'days'
       payload.interval_days = Number(form.interval_days) || 30
-      payload.last_done = form.last_done || null
+      payload.last_done     = form.last_done || null
+    } else if (mode === 'km') {
+      payload.interval_type = 'km'
+      payload.interval_km   = Number(form.interval_km) || 15000
     } else {
       payload.fixed_due_date = form.fixed_due_date || null
     }
@@ -118,12 +132,34 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
       if (mode === 'interval') {
         const payload = {
           ...base,
+          interval_type:  'days',
           interval_days:  Number(form.interval_days),
           last_done:      form.last_done || new Date().toISOString().slice(0, 10),
           fixed_due_date: null,
+          interval_km:    null,
+          last_done_km:   null,
         }
         if (!Number.isFinite(payload.interval_days) || payload.interval_days < 1)
           throw new Error('Intervall må være minst 1 dag')
+        if (taskId) {
+          const { error } = await supabase.from('tasks').update(payload).eq('id', taskId)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from('tasks').insert(payload)
+          if (error) throw error
+        }
+      } else if (mode === 'km') {
+        const km = Number(form.interval_km)
+        if (!Number.isFinite(km) || km < 1) throw new Error('Km-intervall må være minst 1')
+        const payload = {
+          ...base,
+          interval_type:  'km',
+          interval_km:    km,
+          last_done_km:   form.last_done_km ? Number(form.last_done_km) : null,
+          interval_days:  null,
+          last_done:      null,
+          fixed_due_date: null,
+        }
         if (taskId) {
           const { error } = await supabase.from('tasks').update(payload).eq('id', taskId)
           if (error) throw error
@@ -187,6 +223,15 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
           >
             Faste datoer
           </button>
+          {isVehicle && (
+            <button
+              type="button"
+              className={`chip${mode === 'km' ? ' chip-active' : ''}`}
+              onClick={() => setMode('km')}
+            >
+              Kjørelengde (km)
+            </button>
+          )}
         </div>
       </div>
 
@@ -272,6 +317,46 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
             Når en dato er utført, opprettes automatisk ny oppgave ett år frem i tid.
           </p>
         </div>
+      )}
+
+      {mode === 'km' && (
+        <>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-2)' }}>
+            {[
+              { km: 5000,  label:  '5 000 km' },
+              { km: 10000, label: '10 000 km' },
+              { km: 15000, label: '15 000 km' },
+              { km: 30000, label: '30 000 km' },
+            ].map(({ km, label }) => (
+              <button
+                key={km}
+                type="button"
+                className={`chip${Number(form.interval_km) === km ? ' chip-active' : ''}`}
+                onClick={() => setField('interval_km', km)}
+              >{label}</button>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', alignItems: 'start' }}>
+            <Input
+              label="Km-intervall"
+              type="number"
+              min="1"
+              placeholder="f.eks. 15000"
+              value={form.interval_km}
+              onChange={e => setField('interval_km', e.target.value)}
+              hint="Antall km mellom hver utførelse"
+            />
+            <Input
+              label="Sist utført ved (km)"
+              type="number"
+              min="0"
+              placeholder="f.eks. 75000"
+              value={form.last_done_km}
+              onChange={e => setField('last_done_km', e.target.value)}
+              hint="Tom = regn fra 0 km"
+            />
+          </div>
+        </>
       )}
 
       <Select

@@ -37,17 +37,27 @@ function daysUntil(dateStr) {
   return Math.round((target - today) / 86400000)
 }
 
-function assetStatus(tasks) {
-  const days = tasks
-    .map(t => daysUntil(t.fixed_due_date ?? t.next_due))
-    .filter(d => d !== null)
-  if (days.length === 0) return { variant: 'neutral', text: 'Ingen oppgaver' }
-  const min = Math.min(...days)
-  if (min < 0)  return { variant: 'danger',  text: `Forfalt ${-min}d` }
-  if (min === 0) return { variant: 'warning', text: 'Forfaller i dag' }
-  if (min <= 7)  return { variant: 'warning', text: `Om ${min}d` }
-  if (min <= 30) return { variant: 'warning', text: `Om ${min}d` }
-  return { variant: 'success', text: `Om ${min}d` }
+function assetStatus(tasks, currentKm) {
+  const scores = tasks.flatMap(t => {
+    if (t.interval_type === 'km') {
+      if (t.next_due_km == null || currentKm == null) return []
+      return [{ type: 'km', val: t.next_due_km - currentKm }]
+    }
+    const d = daysUntil(t.fixed_due_date ?? t.next_due)
+    return d !== null ? [{ type: 'days', val: d }] : []
+  })
+  if (scores.length === 0) return { variant: 'neutral', text: 'Ingen oppgaver' }
+  const worst = scores.reduce((a, b) => a.val < b.val ? a : b)
+  const { type, val } = worst
+  if (type === 'km') {
+    if (val <= 0)    return { variant: 'danger',  text: `Forfalt ${(-val).toLocaleString('nb-NO')} km` }
+    if (val <= 500)  return { variant: 'warning', text: `Om ${val.toLocaleString('nb-NO')} km` }
+    return                  { variant: 'success', text: `Om ${val.toLocaleString('nb-NO')} km` }
+  }
+  if (val < 0)  return { variant: 'danger',  text: `Forfalt ${-val}d` }
+  if (val === 0) return { variant: 'warning', text: 'Forfaller i dag' }
+  if (val <= 30) return { variant: 'warning', text: `Om ${val}d` }
+  return { variant: 'success', text: `Om ${val}d` }
 }
 
 export default function Home() {
@@ -69,17 +79,30 @@ export default function Home() {
     start.setDate(1)
     start.setHours(0, 0, 0, 0)
 
-    const [{ data }, { count }] = await Promise.all([
+    const [{ data }, { count }, { data: kmRows }] = await Promise.all([
       supabase
         .from('assets')
-        .select('id, name, category, description, image_url, tasks(id, title, next_due, fixed_due_date)')
+        .select('id, name, category, description, image_url, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
         .order('name'),
       supabase
         .from('maintenance_logs')
         .select('id', { count: 'exact', head: true })
         .gte('performed_on', start.toISOString().slice(0, 10)),
+      // Latest km reading per asset (used to evaluate km-based task urgency)
+      supabase
+        .from('maintenance_logs')
+        .select('asset_id, km_reading, performed_on')
+        .not('km_reading', 'is', null)
+        .order('performed_on', { ascending: false }),
     ])
-    setAssets(data ?? [])
+
+    // Build map: assetId → highest km_reading seen (most recent odometer value)
+    const latestKm = new Map()
+    for (const row of kmRows ?? []) {
+      if (!latestKm.has(row.asset_id)) latestKm.set(row.asset_id, row.km_reading)
+    }
+
+    setAssets((data ?? []).map(a => ({ ...a, currentKm: latestKm.get(a.id) ?? null })))
     setDoneCount(count ?? 0)
     setLoading(false)
   }
@@ -105,10 +128,17 @@ export default function Home() {
     let overdue = 0, soon = 0
     for (const a of assets) {
       for (const t of a.tasks ?? []) {
-        const d = daysUntil(t.fixed_due_date ?? t.next_due)
-        if (d === null) continue
-        if (d < 0) overdue++
-        else if (d <= 7) soon++
+        if (t.interval_type === 'km') {
+          if (t.next_due_km == null || a.currentKm == null) continue
+          const diff = t.next_due_km - a.currentKm
+          if (diff <= 0)    overdue++
+          else if (diff <= 500) soon++
+        } else {
+          const d = daysUntil(t.fixed_due_date ?? t.next_due)
+          if (d === null) continue
+          if (d < 0) overdue++
+          else if (d <= 7) soon++
+        }
       }
     }
     return { total: assets.length, overdue, soon }
@@ -118,14 +148,31 @@ export default function Home() {
     const items = []
     for (const a of assets) {
       for (const t of a.tasks ?? []) {
-        const due = t.fixed_due_date ?? t.next_due
-        const d   = daysUntil(due)
-        if (d !== null && d <= 7) {
-          items.push({ ...t, assetId: a.id, assetName: a.name, assetCategory: a.category, d })
+        if (t.interval_type === 'km') {
+          if (t.next_due_km == null || a.currentKm == null) continue
+          const diff = t.next_due_km - a.currentKm
+          if (diff <= 500) {  // within 500 km counts as "attention"
+            items.push({
+              ...t,
+              assetId: a.id, assetName: a.name, assetCategory: a.category,
+              d: null, kmDiff: diff,
+            })
+          }
+        } else {
+          const due = t.fixed_due_date ?? t.next_due
+          const d   = daysUntil(due)
+          if (d !== null && d <= 7) {
+            items.push({ ...t, assetId: a.id, assetName: a.name, assetCategory: a.category, d, kmDiff: null })
+          }
         }
       }
     }
-    return items.sort((a, b) => a.d - b.d)
+    // Sort: overdue km first, then overdue days, then upcoming
+    return items.sort((a, b) => {
+      const scoreA = a.kmDiff != null ? (a.kmDiff <= 0 ? -9999 : a.kmDiff) : a.d
+      const scoreB = b.kmDiff != null ? (b.kmDiff <= 0 ? -9999 : b.kmDiff) : b.d
+      return scoreA - scoreB
+    })
   }, [assets])
 
   const filtered = useMemo(() => {
@@ -204,12 +251,15 @@ export default function Home() {
             </div>
             <Card padding={0} className="attention-card">
               {attentionTasks.slice(0, 10).map((task, i) => {
-                const d = task.d
-                const badge = d < 0
-                  ? { variant: 'danger',  text: `Forfalt ${-d}d` }
-                  : d === 0
+                const badge = task.kmDiff != null
+                  ? task.kmDiff <= 0
+                    ? { variant: 'danger',  text: `Forfalt ${(-task.kmDiff).toLocaleString('nb-NO')} km` }
+                    : { variant: 'warning', text: `Om ${task.kmDiff.toLocaleString('nb-NO')} km` }
+                  : task.d < 0
+                  ? { variant: 'danger',  text: `Forfalt ${-task.d}d` }
+                  : task.d === 0
                   ? { variant: 'warning', text: 'I dag' }
-                  : { variant: 'warning', text: `Om ${d}d` }
+                  : { variant: 'warning', text: `Om ${task.d}d` }
                 return (
                   <div
                     key={task.id}
@@ -290,7 +340,7 @@ export default function Home() {
           ) : (
             <div className="asset-grid">
               {filtered.map(a => {
-                const s = assetStatus(a.tasks ?? [])
+                const s = assetStatus(a.tasks ?? [], a.currentKm)
                 const count = (a.tasks ?? []).length
                 return (
                   <Card

@@ -97,6 +97,14 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
   async function handleSave() {
     setSaving(true)
     setError(null)
+
+    // km-based tasks require a km reading to track completion properly
+    if (task.interval_type === 'km' && !form.km_reading) {
+      setError('Denne oppgaven er km-basert — fyll inn kilometerstand for å registrere fullføring.')
+      setSaving(false)
+      return
+    }
+
     try {
       const payload = {
         task_id: task.id,
@@ -140,6 +148,15 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
           interval_days: null,
           last_done:     null,
         })
+      }
+
+      // For km-based tasks, advance the task's last_done_km so next_due_km
+      // (a generated column) is recomputed to the next service km mark.
+      if (task.interval_type === 'km' && form.km_reading) {
+        await supabase
+          .from('tasks')
+          .update({ last_done_km: Number(form.km_reading) })
+          .eq('id', task.id)
       }
 
       onSaved?.()
