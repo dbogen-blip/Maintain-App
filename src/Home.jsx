@@ -6,6 +6,7 @@
 // (fixed_due_date ?? next_due) falls within the next 7 days or is already
 // overdue, sorted by urgency.
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Card from './components/Card'
 import Button from './components/Button'
@@ -48,10 +49,11 @@ function assetStatus(tasks) {
   return { variant: 'success', text: `Om ${min}d` }
 }
 
-export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onSignOut, user }) {
+export default function Home() {
+  const navigate = useNavigate()
 
   function handleSignOut() {
-    if (window.confirm('Er du sikker på at du vil logge ut?')) onSignOut()
+    if (window.confirm('Er du sikker på at du vil logge ut?')) supabase.auth.signOut()
   }
   const [assets, setAssets]         = useState([])
   const [doneCount, setDoneCount]   = useState(0)
@@ -159,10 +161,10 @@ export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onS
           <span className="home-brand-name">Maintain</span>
         </div>
         <nav className="home-topbar-nav">
-          <button type="button" className="topbar-nav-btn" onClick={onOpenTemplates}>
+          <button type="button" className="topbar-nav-btn" onClick={() => navigate('/templates')}>
             <Icon name="search" size={16} /><span className="nav-label">Bibliotek</span>
           </button>
-          <button type="button" className="topbar-nav-btn" onClick={onOpenSettings}>
+          <button type="button" className="topbar-nav-btn" onClick={() => navigate('/settings')}>
             <Icon name="settings" size={16} /><span className="nav-label">Innstillinger</span>
           </button>
           <button type="button" className="topbar-nav-btn topbar-nav-btn--muted" onClick={handleSignOut}>
@@ -217,7 +219,7 @@ export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onS
                   >
                     <button
                       className="attention-row-body"
-                      onClick={() => onOpenAsset(task.assetId)}
+                      onClick={() => navigate('/assets/' + task.assetId)}
                     >
                       <div>
                         <div className="attention-task-title">{task.title}</div>
@@ -296,10 +298,10 @@ export default function Home({ onOpenAsset, onOpenSettings, onOpenTemplates, onS
                   <Card
                     key={a.id}
                     className="asset-card"
-                    onClick={() => onOpenAsset(a.id)}
+                    onClick={() => navigate('/assets/' + a.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={e => { if (e.key === 'Enter') onOpenAsset(a.id) }}
+                    onKeyDown={e => { if (e.key === 'Enter') navigate('/assets/' + a.id) }}
                   >
                     <div className="asset-cover">
                       {a.image_url

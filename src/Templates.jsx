@@ -2,6 +2,7 @@
 // Sort options: most popular (forks), highest rated (stars), newest.
 // Each card shows the fork count and star count.
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { searchTemplates } from './templates'
 import { categoryImgProps } from './categoryImages'
 import Card from './components/Card'
@@ -28,7 +29,8 @@ const SORT_OPTIONS = [
   { value: 'newest',  label: 'Nyeste' },
 ]
 
-export default function Templates({ onBack, onOpen }) {
+export default function Templates() {
+  const navigate = useNavigate()
   const [items, setItems]     = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
@@ -58,7 +60,7 @@ export default function Templates({ onBack, onOpen }) {
 
   return (
     <div className="container">
-      <Button variant="ghost" icon="arrowLeft" onClick={onBack}>Tilbake</Button>
+      <Button variant="ghost" icon="arrowLeft" onClick={() => navigate(-1)}>Tilbake</Button>
 
       <header className="home-header" style={{ marginTop: 'var(--space-3)' }}>
         <div>
@@ -127,10 +129,10 @@ export default function Templates({ onBack, onOpen }) {
             <Card
               key={t.id}
               className="asset-card"
-              onClick={() => onOpen(t.id)}
+              onClick={() => navigate('/templates/' + t.id)}
               role="button"
               tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter') onOpen(t.id) }}
+              onKeyDown={e => { if (e.key === 'Enter') navigate('/templates/' + t.id) }}
             >
               <div className="asset-cover">
                 {t.image_url

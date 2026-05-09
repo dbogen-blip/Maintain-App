@@ -9,6 +9,7 @@
 // CarTaskPicker and HouseTaskPicker are category-specific preset pickers that
 // bulk-insert common tasks from a curated list.
 import { useEffect, useMemo, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import { publicUrl, isImage } from './storage'
 import { categoryImgProps } from './categoryImages'
@@ -50,7 +51,9 @@ function priorityLabel(p) {
   return p === 1 ? 'Høy' : p === 3 ? 'Lav' : 'Normal'
 }
 
-export default function AssetDetail({ assetId, onBack }) {
+export default function AssetDetail() {
+  const { id: assetId } = useParams()
+  const navigate = useNavigate()
   const [asset, setAsset]                   = useState(null)
   const [tasks, setTasks]                   = useState([])
   const [loading, setLoading]               = useState(true)
@@ -129,7 +132,7 @@ export default function AssetDetail({ assetId, onBack }) {
   async function deleteAsset() {
     if (!confirm('Slette eiendelen, alle oppgaver og historikk?')) return
     await supabase.from('assets').delete().eq('id', assetId)
-    onBack()
+    navigate('/')
   }
 
   function renderTask(task) {
@@ -258,13 +261,13 @@ export default function AssetDetail({ assetId, onBack }) {
   )
   if (!asset) return (
     <div className="container">
-      <EmptyState title="Fant ikke eiendelen" action={<Button onClick={onBack}>Tilbake</Button>} />
+      <EmptyState title="Fant ikke eiendelen" action={<Button onClick={() => navigate('/')}>Tilbake</Button>} />
     </div>
   )
 
   return (
     <div className="container">
-      <Button variant="ghost" icon="arrowLeft" onClick={onBack}>Tilbake</Button>
+      <Button variant="ghost" icon="arrowLeft" onClick={() => navigate(-1)}>Tilbake</Button>
 
       <Card className="detail-hero" padding={0}>
         <div className="detail-hero-image">

@@ -1,12 +1,17 @@
-// Root component. Owns auth state and top-level routing.
-// Routing is a plain string-based state object { name, id } — no React Router.
-// This keeps the bundle small and the nav model simple; all navigation is
-// prop-drilled via onOpen* callbacks.
-// onAuthStateChange is used instead of a one-shot getUser() call because
-// getUser() resolves synchronously before Supabase has had a chance to parse
-// the #access_token hash from the URL, which means users arriving via a magic
-// link would land on the login screen before being redirected.
+// Root component. Owns auth state and hands off routing to React Router.
+// URL structure:
+//   /               → Home (asset list + dashboard)
+//   /assets/:id     → AssetDetail
+//   /settings       → Settings
+//   /templates      → Templates (public library list)
+//   /templates/:id  → TemplateDetail
+//
+// Auth: onAuthStateChange is the single source of truth (see supabaseClient.js
+// for why we don't use getUser()).  If the user is not logged in we render
+// <Login> no matter what the URL is; the URL is preserved so that after login
+// the router will land on the originally requested page.
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Login from './Login.jsx'
 import Home from './Home.jsx'
@@ -19,22 +24,9 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Check for a deep-link query param set by push notifications (?asset=ID).
-  // We read it once at startup so tapping a notification opens the right asset.
-  const [route, setRoute] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    const assetId = params.get('asset')
-    if (assetId) {
-      // Remove the param from the URL bar without adding a history entry.
-      window.history.replaceState(null, '', window.location.pathname)
-      return { name: 'asset', id: assetId }
-    }
-    return { name: 'home' }
-  })
-
   useEffect(() => {
     // onAuthStateChange fires with INITIAL_SESSION on mount (including when
-    // there's a token in the URL hash after a magic-link click), so we use it
+    // there is a token in the URL hash after a magic-link click), so we use it
     // as the single source of truth and skip the separate getUser() call.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
@@ -53,37 +45,19 @@ export default function App() {
 
   if (!user) return <Login />
 
-  if (route.name === 'asset') {
-    return <AssetDetail assetId={route.id} onBack={() => setRoute({ name: 'home' })} />
-  }
-  if (route.name === 'settings') {
-    return <Settings onBack={() => setRoute({ name: 'home' })} />
-  }
-  if (route.name === 'templates') {
-    return (
-      <Templates
-        onBack={() => setRoute({ name: 'home' })}
-        onOpen={id => setRoute({ name: 'template', id })}
-      />
-    )
-  }
-  if (route.name === 'template') {
-    return (
-      <TemplateDetail
-        templateId={route.id}
-        onBack={() => setRoute({ name: 'templates' })}
-        onForked={newAssetId => setRoute({ name: 'asset', id: newAssetId })}
-      />
-    )
-  }
-
+  // BrowserRouter lives inside the auth gate so all route components can safely
+  // call useNavigate() without a "no router" error during the loading/login phase.
   return (
-    <Home
-      user={user}
-      onOpenAsset={id => setRoute({ name: 'asset', id })}
-      onOpenSettings={() => setRoute({ name: 'settings' })}
-      onOpenTemplates={() => setRoute({ name: 'templates' })}
-      onSignOut={() => supabase.auth.signOut()}
-    />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/assets/:id" element={<AssetDetail />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/templates" element={<Templates />} />
+        <Route path="/templates/:id" element={<TemplateDetail />} />
+        {/* Catch-all: redirect unknown paths to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }

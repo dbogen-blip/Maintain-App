@@ -3,6 +3,7 @@
 // into their own account. Logged-in users can also star/unstar the template.
 // Users cannot star their own templates (the star button is hidden for the author).
 import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { getTemplate, forkTemplate, bumpTemplateView, toggleStar, getUserStarredIds } from './templates'
 import { publicUrl, isImage } from './storage'
 import { categoryImgProps } from './categoryImages'
@@ -19,7 +20,9 @@ function priorityLabel(p) {
   return p === 1 ? 'Høy' : p === 3 ? 'Lav' : 'Normal'
 }
 
-export default function TemplateDetail({ templateId, onBack, onForked }) {
+export default function TemplateDetail() {
+  const { id: templateId } = useParams()
+  const navigate = useNavigate()
   const [tpl, setTpl]             = useState(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState(null)
@@ -93,7 +96,7 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
   )
   if (!tpl) return (
     <div className="container">
-      <EmptyState title="Fant ikke malen" action={<Button onClick={onBack}>Tilbake</Button>} />
+      <EmptyState title="Fant ikke malen" action={<Button onClick={() => navigate('/templates')}>Tilbake</Button>} />
     </div>
   )
 
@@ -103,7 +106,7 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
 
   return (
     <div className="container">
-      <Button variant="ghost" icon="arrowLeft" onClick={onBack}>Tilbake til biblioteket</Button>
+      <Button variant="ghost" icon="arrowLeft" onClick={() => navigate(-1)}>Tilbake til biblioteket</Button>
 
       <Card className="detail-hero" padding={0}>
         <div className="detail-hero-image">
@@ -162,7 +165,7 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
               {forkResult ? (
                 <div className="row">
                   <Badge variant="success">Lagt til i din samling</Badge>
-                  <Button onClick={() => onForked?.(forkResult.newAssetId)} icon="arrowRight">
+                  <Button onClick={() => navigate('/assets/' + forkResult.newAssetId)} icon="arrowRight">
                     Gå til eiendelen
                   </Button>
                 </div>
@@ -171,7 +174,7 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
                   Bruk denne malen
                 </Button>
               ) : (
-                <Button variant="secondary" onClick={onBack}>Logg inn for å bruke</Button>
+                <Button variant="secondary" onClick={() => navigate('/')}>Logg inn for å bruke</Button>
               )}
             </div>
           </div>

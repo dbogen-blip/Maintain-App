@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import {
   isPushSupported,
@@ -14,7 +15,8 @@ import { Input, Checkbox } from './components/Input'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
-export default function Settings({ onBack }) {
+export default function Settings() {
+  const navigate = useNavigate()
   const [prefs, setPrefs] = useState(null)
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState(null)
@@ -142,7 +144,7 @@ export default function Settings({ onBack }) {
 
   return (
     <div className="container" style={{ maxWidth: 560 }}>
-      <Button variant="ghost" icon="arrowLeft" onClick={onBack}>Tilbake</Button>
+      <Button variant="ghost" icon="arrowLeft" onClick={() => navigate(-1)}>Tilbake</Button>
 
       <h1 style={{ margin: 'var(--space-3) 0 var(--space-5)' }}>Innstillinger</h1>
 
