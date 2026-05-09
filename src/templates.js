@@ -120,11 +120,14 @@ export async function forkTemplate(templateId) {
   return newAsset.id
 }
 
-export async function searchTemplates({ q = '', category = '', limit = 30 } = {}) {
+// sort: 'popular' (most forked) | 'rated' (most starred) | 'newest'
+export async function searchTemplates({ q = '', category = '', sort = 'popular', limit = 30 } = {}) {
+  const orderCol = sort === 'rated' ? 'stars_count' : sort === 'newest' ? 'created_at' : 'forks_count'
+
   let query = supabase
     .from('asset_templates')
-    .select('id, name, category, description, image_url, forks_count, views_count, created_at')
-    .order('forks_count', { ascending: false })
+    .select('id, name, category, description, image_url, forks_count, stars_count, views_count, created_at')
+    .order(orderCol, { ascending: false })
     .limit(limit)
 
   if (q.trim()) {
@@ -140,11 +143,26 @@ export async function searchTemplates({ q = '', category = '', limit = 30 } = {}
   return data ?? []
 }
 
+// Toggle a star on a template. Calls a SECURITY DEFINER RPC that atomically
+// updates template_stars and asset_templates.stars_count in one transaction.
+// Returns true if now starred, false if unstarred.
+export async function toggleStar(templateId) {
+  const { data, error } = await supabase.rpc('toggle_template_star', { p_template_id: templateId })
+  if (error) throw error
+  return data // boolean
+}
+
+// Returns a Set of template IDs that the current user has starred.
+export async function getUserStarredIds() {
+  const { data } = await supabase.from('template_stars').select('template_id')
+  return new Set((data ?? []).map(r => r.template_id))
+}
+
 export async function getTemplate(templateId) {
   const { data, error } = await supabase
     .from('asset_templates')
     .select(`
-      id, name, category, description, image_url, views_count, forks_count, created_at,
+      id, name, category, description, image_url, views_count, forks_count, stars_count, created_at,
       tasks:task_templates (
         id, title, interval_days, priority, description, display_order,
         attachments:task_template_attachments(id, file_path, file_name, mime_type, size_bytes)

@@ -12,6 +12,8 @@ import Badge from './components/Badge'
 import Icon from './components/Icon'
 import { Input, Checkbox } from './components/Input'
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+
 export default function Settings({ onBack }) {
   const [prefs, setPrefs] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -25,11 +27,48 @@ export default function Settings({ onBack }) {
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordError, setPasswordError] = useState(null)
   const [passwordSaved, setPasswordSaved] = useState(false)
+  const [publishedTemplates, setPublishedTemplates] = useState([])
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
     load()
     refreshPushStatus()
+    loadPublishedTemplates()
   }, [])
+
+  async function loadPublishedTemplates() {
+    const { data } = await supabase
+      .from('asset_templates')
+      .select('id, name')
+    setPublishedTemplates(data ?? [])
+  }
+
+  async function handleDeleteAccount() {
+    if (publishedTemplates.length > 0) {
+      alert(`Du har ${publishedTemplates.length} publisert${publishedTemplates.length > 1 ? 'e' : ''} mal${publishedTemplates.length > 1 ? 'er' : ''} i fellesbiblioteket.\n\nFjern publiseringen fra hver eiendel før du sletter kontoen, hvis du ønsker å fjerne dem fra biblioteket.\n\nMaler du lar stå vil forbli tilgjengelige for andre selv etter at kontoen er slettet.`)
+      return
+    }
+    if (!window.confirm('Er du helt sikker på at du vil slette kontoen din?\n\nAlle eiendeler, oppgaver og historikk slettes permanent. Dette kan ikke angres.')) return
+    if (!window.confirm('Siste bekreftelse: slett kontoen permanent?')) return
+
+    setDeletingAccount(true)
+    setDeleteError(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Sletting feilet')
+      // Auth user is now deleted — sign out locally
+      await supabase.auth.signOut()
+    } catch (e) {
+      setDeleteError(e.message)
+      setDeletingAccount(false)
+    }
+  }
 
   async function load() {
     const { data } = await supabase
@@ -215,7 +254,7 @@ export default function Settings({ onBack }) {
         </form>
       </Card>
 
-      <Card padding={5}>
+      <Card padding={5} style={{ marginBottom: 'var(--space-4)' }}>
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
           <h2 style={{ margin: 0 }}>Push på denne enheten</h2>
           {pushStatus.supported && (
@@ -246,6 +285,35 @@ export default function Settings({ onBack }) {
             {pushError && <p style={{ color: 'var(--color-danger-600)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-2)' }}>{pushError}</p>}
           </>
         )}
+      </Card>
+
+      {/* Danger zone — account deletion */}
+      <Card padding={5} style={{ borderColor: 'rgba(239,68,68,.25)', marginTop: 'var(--space-4)' }}>
+        <h2 style={{ marginBottom: 'var(--space-1)', color: 'var(--color-danger-700)' }}>Slett konto</h2>
+        <p className="muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
+          Sletter kontoen din og alle eiendeler, oppgaver og historikk permanent.
+          Maler du har publisert i fellesbiblioteket vil fortsatt være tilgjengelige for andre —
+          fjern publiseringen fra eiendelen først hvis du ønsker å ta dem ned.
+        </p>
+        {publishedTemplates.length > 0 && (
+          <div style={{
+            background: 'var(--color-warning-50)', border: '1px solid rgba(245,158,11,.25)',
+            borderRadius: 'var(--radius-md)', padding: 'var(--space-3)',
+            fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)',
+          }}>
+            <strong>Du har {publishedTemplates.length} publisert{publishedTemplates.length > 1 ? 'e maler' : ' mal'} i biblioteket:</strong>
+            <ul style={{ margin: 'var(--space-2) 0 0', paddingLeft: 'var(--space-4)' }}>
+              {publishedTemplates.map(t => <li key={t.id}>{t.name}</li>)}
+            </ul>
+            <p style={{ margin: 'var(--space-2) 0 0', color: 'var(--color-text-muted)' }}>
+              Disse vil forbli i biblioteket etter kontosletting. Gå inn på hver eiendel og klikk «Fjern publisering» hvis du vil ta dem ned.
+            </p>
+          </div>
+        )}
+        {deleteError && <p style={{ color: 'var(--color-danger-600)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-3)' }}>{deleteError}</p>}
+        <Button variant="danger" icon="trash" loading={deletingAccount} onClick={handleDeleteAccount}>
+          Slett kontoen min permanent
+        </Button>
       </Card>
     </div>
   )

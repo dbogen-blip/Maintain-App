@@ -1,3 +1,6 @@
+// Public template library — browse, filter, and sort maintenance plans shared by other users.
+// Sort options: most popular (forks), highest rated (stars), newest.
+// Each card shows the fork count and star count.
 import { useEffect, useMemo, useState } from 'react'
 import { searchTemplates } from './templates'
 import Card from './components/Card'
@@ -18,19 +21,26 @@ function categoryIcon(category) {
 
 const COMMON_CATEGORIES = ['Bil', 'Båt', 'Hus', 'Hage', 'Sykkel', 'MC/ATV', 'Verktøy']
 
-export default function Templates({ onBack, onOpen }) {
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('')
-  const [error, setError] = useState(null)
+const SORT_OPTIONS = [
+  { value: 'popular', label: 'Mest brukt' },
+  { value: 'rated',   label: 'Høyest rangert' },
+  { value: 'newest',  label: 'Nyeste' },
+]
 
-  useEffect(() => { load() }, [search, filter])
+export default function Templates({ onBack, onOpen }) {
+  const [items, setItems]     = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch]   = useState('')
+  const [filter, setFilter]   = useState('')
+  const [sort, setSort]       = useState('popular')
+  const [error, setError]     = useState(null)
+
+  useEffect(() => { load() }, [search, filter, sort])
 
   async function load() {
     setLoading(true)
     try {
-      const data = await searchTemplates({ q: search, category: filter })
+      const data = await searchTemplates({ q: search, category: filter, sort })
       setItems(data)
     } catch (e) {
       setError(e.message)
@@ -65,6 +75,18 @@ export default function Templates({ onBack, onOpen }) {
             onChange={e => setSearch(e.target.value)}
             aria-label="Søk i maler"
           />
+        </div>
+
+        {/* Sort selector */}
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          {SORT_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`chip${sort === opt.value ? ' chip-active' : ''}`}
+              onClick={() => setSort(opt.value)}
+            >{opt.label}</button>
+          ))}
         </div>
 
         <div className="home-filters">
@@ -121,10 +143,15 @@ export default function Templates({ onBack, onOpen }) {
                     {t.description}
                   </p>
                 )}
-                <div className="row" style={{ justifyContent: 'space-between', marginTop: 'var(--space-3)' }}>
+                <div className="row" style={{ justifyContent: 'space-between', marginTop: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                   {t.category && <Badge>{t.category}</Badge>}
-                  <span className="muted" style={{ fontSize: 'var(--font-size-xs)' }}>
-                    {t.forks_count} brukt
+                  <span style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Icon name="star" size={12} /> {t.stars_count ?? 0}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Icon name="upload" size={12} /> {t.forks_count ?? 0}
+                    </span>
                   </span>
                 </div>
               </div>

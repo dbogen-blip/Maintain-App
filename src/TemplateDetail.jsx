@@ -1,5 +1,9 @@
+// Detail view for a single public template.
+// Shows tasks, attachments, usage stats, and allows the user to fork the template
+// into their own account. Logged-in users can also star/unstar the template.
+// Users cannot star their own templates (the star button is hidden for the author).
 import { useEffect, useState } from 'react'
-import { getTemplate, forkTemplate, bumpTemplateView } from './templates'
+import { getTemplate, forkTemplate, bumpTemplateView, toggleStar, getUserStarredIds } from './templates'
 import { publicUrl, isImage } from './storage'
 import { supabase } from './supabaseClient'
 import Card from './components/Card'
@@ -15,12 +19,15 @@ function priorityLabel(p) {
 }
 
 export default function TemplateDetail({ templateId, onBack, onForked }) {
-  const [tpl, setTpl] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [user, setUser] = useState(null)
-  const [forking, setForking] = useState(false)
-  const [forkResult, setForkResult] = useState(null) // { newAssetId }
+  const [tpl, setTpl]             = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
+  const [user, setUser]           = useState(null)
+  const [forking, setForking]     = useState(false)
+  const [forkResult, setForkResult] = useState(null)
+  const [starred, setStarred]     = useState(false)
+  const [starBusy, setStarBusy]   = useState(false)
+  const [localStars, setLocalStars] = useState(0) // optimistic star count
 
   useEffect(() => {
     load()
@@ -28,12 +35,19 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
     supabase.auth.getUser().then(({ data }) => setUser(data?.user ?? null))
   }, [templateId])
 
+  // Load starred state once user is known
+  useEffect(() => {
+    if (!user) return
+    getUserStarredIds().then(ids => setStarred(ids.has(templateId)))
+  }, [user, templateId])
+
   async function load() {
     setLoading(true)
     try {
       const data = await getTemplate(templateId)
       const tasks = (data.tasks ?? []).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
       setTpl({ ...data, tasks })
+      setLocalStars(data.stars_count ?? 0)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -53,6 +67,24 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
     }
   }
 
+  async function handleStar() {
+    if (!user || starBusy) return
+    setStarBusy(true)
+    // Optimistic update
+    const newStarred = !starred
+    setStarred(newStarred)
+    setLocalStars(n => n + (newStarred ? 1 : -1))
+    try {
+      await toggleStar(templateId)
+    } catch (e) {
+      // Revert on failure
+      setStarred(!newStarred)
+      setLocalStars(n => n + (newStarred ? -1 : 1))
+    } finally {
+      setStarBusy(false)
+    }
+  }
+
   if (loading) return (
     <div className="container" style={{ display: 'flex', justifyContent: 'center', paddingTop: 'var(--space-8)' }}>
       <Spinner size="md" />
@@ -63,6 +95,10 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
       <EmptyState title="Fant ikke malen" action={<Button onClick={onBack}>Tilbake</Button>} />
     </div>
   )
+
+  // Don't show star button on the user's own templates
+  const isOwn = user && tpl.user_id === user.id
+  const canStar = user && !isOwn
 
   return (
     <div className="container">
@@ -80,24 +116,63 @@ export default function TemplateDetail({ templateId, onBack, onForked }) {
               <h1>{tpl.name}</h1>
               <div className="row" style={{ marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {tpl.category && <Badge>{tpl.category}</Badge>}
-                <Badge variant="neutral">{tpl.forks_count} har brukt denne</Badge>
-                <Badge variant="neutral">{tpl.views_count} visninger</Badge>
+                <Badge variant="neutral">
+                  <Icon name="upload" size={12} style={{ marginRight: 4 }} /> {tpl.forks_count} brukt
+                </Badge>
+                <Badge variant="neutral">
+                  <Icon name="star" size={12} style={{ marginRight: 4 }} /> {localStars} stjerner
+                </Badge>
               </div>
             </div>
-            {forkResult ? (
-              <div className="row" style={{ flexWrap: 'wrap' }}>
-                <Badge variant="success">Lagt til i din samling</Badge>
-                <Button onClick={() => onForked?.(forkResult.newAssetId)} icon="arrowRight" iconRight="arrowRight">
-                  Gå til eiendelen
+
+            <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              {/* Star button — only for logged-in users who don't own this template */}
+              {canStar && (
+                <button
+                  type="button"
+                  onClick={handleStar}
+                  disabled={starBusy}
+                  title={starred ? 'Fjern stjerne' : 'Gi stjerne'}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '8px 14px',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    background: starred ? 'var(--color-warning-50)' : 'var(--color-surface)',
+                    color: starred ? '#d97706' : 'var(--color-text-muted)',
+                    cursor: 'pointer', fontSize: 'var(--font-size-sm)',
+                    fontFamily: 'inherit', fontWeight: 'var(--font-weight-medium)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg" width={16} height={16}
+                    viewBox="0 0 24 24"
+                    fill={starred ? 'currentColor' : 'none'}
+                    stroke="currentColor" strokeWidth={2}
+                    strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  {starred ? 'Stjernemerket' : 'Gi stjerne'}
+                </button>
+              )}
+
+              {forkResult ? (
+                <div className="row">
+                  <Badge variant="success">Lagt til i din samling</Badge>
+                  <Button onClick={() => onForked?.(forkResult.newAssetId)} icon="arrowRight">
+                    Gå til eiendelen
+                  </Button>
+                </div>
+              ) : user ? (
+                <Button onClick={handleFork} loading={forking} icon="plus">
+                  Bruk denne malen
                 </Button>
-              </div>
-            ) : user ? (
-              <Button onClick={handleFork} loading={forking} icon="plus">
-                Bruk denne malen
-              </Button>
-            ) : (
-              <Button variant="secondary" onClick={onBack}>Logg inn for å bruke</Button>
-            )}
+              ) : (
+                <Button variant="secondary" onClick={onBack}>Logg inn for å bruke</Button>
+              )}
+            </div>
           </div>
           {tpl.description && (
             <p style={{ marginTop: 'var(--space-3)', color: 'var(--color-text-muted)' }}>

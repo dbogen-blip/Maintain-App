@@ -38,6 +38,7 @@ const ICONS = {
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
   more: 'M12 12.01M12 5.01M12 19.01',
   refresh: 'M21 12a9 9 0 0 1-9 9c-2.4 0-4.6-.94-6.22-2.46L3 17M3 12a9 9 0 0 1 9-9c2.4 0 4.6.94 6.22 2.46L21 7M21 3v4h-4M3 21v-4h4',
+  star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
 }
 
 export default function Icon({ name, size = 20, strokeWidth = 2, ...rest }) {
