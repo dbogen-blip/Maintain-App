@@ -287,6 +287,9 @@ export default function AssetDetail() {
               </div>
             </div>
             <div className="row asset-hero-actions" style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
+              <Button variant="secondary" icon="printer" onClick={() => navigate(`/assets/${assetId}/export`)}>
+                <span className="asset-btn-label">Historikk</span>
+              </Button>
               <Button
                 variant="secondary"
                 icon={publishedTemplate ? 'check' : 'upload'}

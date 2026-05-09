@@ -16,6 +16,7 @@ import { supabase } from './supabaseClient'
 import Login from './Login.jsx'
 import Home from './Home.jsx'
 import AssetDetail from './AssetDetail.jsx'
+import AssetExport from './AssetExport.jsx'
 import Settings from './Settings.jsx'
 import Templates from './Templates.jsx'
 import TemplateDetail from './TemplateDetail.jsx'
@@ -52,6 +53,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/assets/:id" element={<AssetDetail />} />
+        <Route path="/assets/:id/export" element={<AssetExport />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/templates/:id" element={<TemplateDetail />} />
