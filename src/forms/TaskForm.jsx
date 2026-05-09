@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { uploadTaskAttachment, deleteFile } from '../storage'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { Input, Textarea, Select } from '../components/Input'
 import Button from '../components/Button'
 import Icon from '../components/Icon'
@@ -34,6 +35,7 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
   const [error, setError] = useState(null)
   const [attachments, setAttachments] = useState([])
   const [taskId, setTaskId] = useState(task?.id ?? null)
+  const [confirmDeleteAtt, setConfirmDeleteAtt] = useState(null) // attachment | null
 
   useEffect(() => {
     if (task?.id) loadAttachments(task.id)
@@ -86,8 +88,7 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
     }
   }
 
-  async function handleAttachmentDelete(att) {
-    if (!confirm(`Slette ${att.file_name}?`)) return
+  async function doDeleteAttachment(att) {
     try {
       await deleteFile(att.file_path)
       const { error } = await supabase.from('task_attachments').delete().eq('id', att.id)
@@ -95,6 +96,9 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
       setAttachments(prev => prev.filter(a => a.id !== att.id))
     } catch (e) {
       setError(e.message)
+    } finally {
+      // Always reset so the dialog can be opened again for the next attachment
+      setConfirmDeleteAtt(null)
     }
   }
 
@@ -302,7 +306,7 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
         <FileUpload
           onSelect={handleAttachmentSelect}
           existing={attachments}
-          onDelete={handleAttachmentDelete}
+          onDelete={att => setConfirmDeleteAtt(att)}
           accept="image/*,application/pdf,.doc,.docx,.txt"
           multiple
           hint="Bilder, PDF, eller tekstdokumenter"
@@ -317,6 +321,16 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
           {isEdit ? 'Lagre' : 'Opprett'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteAtt}
+        title="Slett vedlegg"
+        message={`«${confirmDeleteAtt?.file_name}» slettes permanent.`}
+        confirmLabel="Slett"
+        variant="danger"
+        onConfirm={() => doDeleteAttachment(confirmDeleteAtt)}
+        onClose={() => setConfirmDeleteAtt(null)}
+      />
     </Modal>
   )
 }

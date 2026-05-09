@@ -4,6 +4,7 @@
 // is NULL and the library shows the standard category image instead.
 import { useEffect, useState } from 'react'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import Button from '../components/Button'
 import Icon from '../components/Icon'
 import { publishAsset, unpublishAsset, getTemplateForAsset } from '../templates'
@@ -13,6 +14,7 @@ export default function PublishModal({ asset, onClose, onPublished }) {
   const [published, setPublished]       = useState(null)
   const [busy, setBusy]                 = useState(false)
   const [error, setError]               = useState(null)
+  const [confirmUnpublish, setConfirmUnpublish] = useState(false)
   // Default to sharing the image if the asset already has one
   const [includeImage, setIncludeImage] = useState(!!asset?.image_url)
 
@@ -37,8 +39,8 @@ export default function PublishModal({ asset, onClose, onPublished }) {
     }
   }
 
-  async function handleUnpublish() {
-    if (!confirm('Fjerne malen fra fellesbiblioteket? Andre kan da ikke lenger kopiere den.')) return
+  async function doUnpublish() {
+    setConfirmUnpublish(false)
     setBusy(true); setError(null)
     try {
       await unpublishAsset(asset.id)
@@ -174,7 +176,7 @@ export default function PublishModal({ asset, onClose, onPublished }) {
         <Button variant="secondary" onClick={onClose}>Lukk</Button>
         {published ? (
           <>
-            <Button variant="danger" onClick={handleUnpublish} loading={busy}>Avpubliser</Button>
+            <Button variant="danger" onClick={() => setConfirmUnpublish(true)} loading={busy}>Avpubliser</Button>
             <Button onClick={handlePublish} loading={busy} icon="refresh">
               Oppdater snapshot
             </Button>
@@ -185,6 +187,16 @@ export default function PublishModal({ asset, onClose, onPublished }) {
           </Button>
         )}
       </div>
+      <ConfirmDialog
+        open={confirmUnpublish}
+        title="Avpubliser mal"
+        message="Malen fjernes fra fellesbiblioteket. Andre kan da ikke lenger kopiere den."
+        confirmLabel="Avpubliser"
+        variant="danger"
+        loading={busy}
+        onConfirm={doUnpublish}
+        onClose={() => setConfirmUnpublish(false)}
+      />
     </Modal>
   )
 }
