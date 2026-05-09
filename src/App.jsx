@@ -1,3 +1,11 @@
+// Root component. Owns auth state and top-level routing.
+// Routing is a plain string-based state object { name, id } — no React Router.
+// This keeps the bundle small and the nav model simple; all navigation is
+// prop-drilled via onOpen* callbacks.
+// onAuthStateChange is used instead of a one-shot getUser() call because
+// getUser() resolves synchronously before Supabase has had a chance to parse
+// the #access_token hash from the URL, which means users arriving via a magic
+// link would land on the login screen before being redirected.
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import Login from './Login.jsx'

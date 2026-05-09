@@ -1,6 +1,15 @@
-// lookup-vehicle
-// Proxy mot Statens vegvesen sitt kjøretøydata-API.
-// Kalles fra frontend med ?regnr=AB12345
+// Supabase Edge Function: lookup-vehicle
+// Proxies the Statens vegvesen (Norwegian vehicle registry) kjøretøydata API.
+// A server-side proxy is required because the SVV API does not send CORS headers,
+// so the browser cannot call it directly.
+// Called from the frontend with ?regnr=AB12345.
+// Maps Norwegian technical vehicle type codes to app categories:
+//   M / N  → Bil (passenger car / light commercial)
+//   L      → MC/ATV
+//   O      → Tilhenger (trailer)
+//   SA karosseri → Bobil (motorhome — takes precedence over type code)
+// Returns { name, category, description, regnr } where description is a
+// formatted block of technical specs (make, model, year, fuel, weight, etc.).
 
 const SVV_KEY = Deno.env.get('SVV_API_KEY') ?? '73af5e12-c5fa-4ba3-a008-feb58993238a'
 const SVV_URL = 'https://www.vegvesen.no/ws/no/vegvesen/kjoretoy/felles/datautlevering/enkeltoppslag/kjoretoydata'

@@ -1,3 +1,13 @@
+// Form for logging a completed maintenance event to the maintenance_logs table.
+// km_reading is only shown for vehicle categories (Bil, MC/ATV) where odometer
+// tracking is meaningful.
+// Auto-renewal: when a fixed_due_date task is marked done, a new identical task
+// row is inserted with fixed_due_date + 1 year. This preserves the original
+// calendar date (e.g. annual service always due in March) rather than rolling
+// forward from the completion date. The !logId guard prevents duplicate renewal
+// if the log row was pre-created by ensureLogId().
+// ensureLogId() pre-creates the log row before file upload so the storage
+// path can reference the real log id. The same row is updated on final save.
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { uploadLogAttachment, deleteFile } from '../storage'
@@ -105,7 +115,8 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
         if (error) throw error
       }
 
-      // Auto-renew fixed-date tasks: create next year's copy based on original date
+      // Auto-renewal: advance by exactly one year from the original fixed date,
+      // not from today, so the calendar anchor is preserved indefinitely.
       if (task.fixed_due_date && !logId) {
         const [y, m, d] = task.fixed_due_date.split('-')
         const nextDate = `${parseInt(y) + 1}-${m}-${d}`

@@ -1,11 +1,11 @@
-// Hjelpefunksjoner for templates (offentlige vedlikeholdsprogram).
-//
-// publishAsset(assetId)        → tar et snapshot av brukerens asset+tasks+attachments
-//                                som offentlig mal. SQL-funksjon på server gjør jobben.
-//
-// forkTemplate(templateId)     → kopierer en mal inn i den innloggede brukerens
-//                                konto. Filer kopieres i Storage (Supabase
-//                                .copy()), så forken er uavhengig av original.
+// Template system — lets users share and reuse maintenance plans.
+// Any user can publish their asset + tasks as a public template via a Postgres
+// RPC function (publish_asset_as_template) that snapshots the data server-side.
+// Other users can fork a template into their own account: tasks are deep-copied
+// as new rows and attachment files are duplicated via supabase.storage.copy()
+// so each fork is fully independent of the original publisher's data.
+// forks_count and views_count are bumped via best-effort RPC calls — failures
+// are logged to the console but never surfaced to the user.
 
 import { supabase } from './supabaseClient'
 
@@ -20,7 +20,7 @@ export async function publishAsset(assetId) {
 }
 
 export async function unpublishAsset(assetId) {
-  // Slett alle templates der source_asset_id = assetId
+  // Delete all templates that originated from this asset
   const { error } = await supabase
     .from('asset_templates')
     .delete()
@@ -46,7 +46,7 @@ export async function forkTemplate(templateId) {
   const userId = userData?.user?.id
   if (!userId) throw new Error('Du må være innlogget for å lagre en mal')
 
-  // 1. Hent template + tasks + attachments
+  // 1. Fetch the template with its tasks and attachments
   const { data: template, error: tErr } = await supabase
     .from('asset_templates')
     .select(`
@@ -58,21 +58,21 @@ export async function forkTemplate(templateId) {
     .single()
   if (tErr) throw tErr
 
-  // 2. Lag asset hos brukeren
+  // 2. Create a new asset in the user's account
   const { data: newAsset, error: aErr } = await supabase
     .from('assets')
     .insert({
       name: template.name,
       category: template.category,
       description: template.description,
-      // image_url kopieres som referanse til samme fil — original ligger i publishers folder
+      // Cover image is referenced by URL, not copied — it lives in the publisher's storage folder
       image_url: template.image_url,
     })
     .select()
     .single()
   if (aErr) throw aErr
 
-  // 3. For hver oppgave, lag task + kopier vedlegg
+  // 3. For each task template, create a new task and copy its attachments
   for (const tt of template.task_templates ?? []) {
     const { data: newTask, error: tkErr } = await supabase
       .from('tasks')
@@ -88,7 +88,7 @@ export async function forkTemplate(templateId) {
     if (tkErr) throw tkErr
 
     for (const att of tt.attachments ?? []) {
-      // Kopier filen fra publishers path til vår path
+      // Copy the file from the publisher's path into the forking user's path
       const fileName = att.file_path.split('/').pop()
       const newPath = `${userId}/tasks/${newTask.id}/${fileName}`
 
@@ -96,8 +96,8 @@ export async function forkTemplate(templateId) {
         .from(BUCKET)
         .copy(att.file_path, newPath)
       if (copyErr) {
-        // Hvis kopi feiler (fil mangler etc.), fortsett uten vedlegget
-        console.warn('Kunne ikke kopiere vedlegg:', att.file_path, copyErr.message)
+        // If the copy fails (e.g. file missing), skip this attachment and continue
+        console.warn('Could not copy attachment:', att.file_path, copyErr.message)
         continue
       }
 
@@ -110,11 +110,11 @@ export async function forkTemplate(templateId) {
           mime_type: att.mime_type,
           size_bytes: att.size_bytes,
         })
-      if (insErr) console.warn('Vedleggrad-feil:', insErr.message)
+      if (insErr) console.warn('Attachment insert error:', insErr.message)
     }
   }
 
-  // 4. Bump fork-teller (best-effort)
+  // 4. Increment forks_count on the template (best-effort, failure is silently ignored)
   await supabase.rpc('bump_template_forks', { p_template_id: templateId })
 
   return newAsset.id
@@ -128,7 +128,7 @@ export async function searchTemplates({ q = '', category = '', limit = 30 } = {}
     .limit(limit)
 
   if (q.trim()) {
-    // Bruk plainto_tsquery via textSearch
+    // Use Postgres full-text search via textSearch (simple config covers Norwegian)
     query = query.textSearch('search_tsv', q.trim(), { config: 'simple', type: 'websearch' })
   }
   if (category) {
@@ -157,7 +157,7 @@ export async function getTemplate(templateId) {
 }
 
 export async function bumpTemplateView(templateId) {
-  // Best-effort, ikke vis feil
+  // Best-effort — a failed view-count bump is not worth showing an error for
   try {
     await supabase.rpc('bump_template_views', { p_template_id: templateId })
   } catch (e) {

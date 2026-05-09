@@ -1,3 +1,7 @@
+// Maps category names to image slug filenames served from /public/category-images/.
+// Unknown categories fall back to the 'annet' slug so the UI always has an image.
+// categoryImgProps() tries .png first and falls back to .jpg via an onError
+// handler — this lets us store images in whichever format without updating code.
 const SLUGS = {
   'Bil':                            'bil',
   'Båt':                            'bat',

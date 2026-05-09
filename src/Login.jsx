@@ -1,3 +1,9 @@
+// Login screen with two authentication modes.
+// Primary mode (OTP / magic link): signInWithOtp sends an email containing
+//   both an 8-digit code and a clickable magic link. The user types the code
+//   into this screen so login completes on the current device — no browser
+//   switching required. verifyOtp authenticates with the typed code directly.
+// Secondary mode (password): standard email+password sign-in and sign-up.
 import { useState } from 'react'
 import { supabase } from './supabaseClient'
 import Card from './components/Card'

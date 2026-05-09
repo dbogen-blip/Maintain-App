@@ -1,5 +1,10 @@
-// Push-registrering via Web Push (VAPID).
-// Krever VITE_VAPID_PUBLIC_KEY i .env.local.
+// Web Push subscription management using VAPID authentication.
+// VAPID keys must be generated once (e.g. with web-push generate-vapid-keys)
+// and stored in two places:
+//   VITE_VAPID_PUBLIC_KEY  — frontend .env.local, passed to pushManager.subscribe()
+//   VAPID_PRIVATE_KEY      — Supabase Edge Function secret, used to sign push requests
+// The subscription endpoint and keys are stored in the push_subscriptions table
+// so the server can send notifications at any time, not just during an open session.
 
 import { supabase } from './supabaseClient'
 
@@ -38,17 +43,17 @@ export async function subscribePush() {
     throw new Error('VITE_VAPID_PUBLIC_KEY mangler i .env.local. Se SETUP.md.')
   }
 
-  // 1. Registrer service worker
+  // 1. Register the service worker (required for push on all browsers)
   const reg = await navigator.serviceWorker.register('/sw.js')
   await navigator.serviceWorker.ready
 
-  // 2. Be om tillatelse
+  // 2. Request notification permission from the browser
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') {
     throw new Error('Du må gi tillatelse til varsler i nettleseren.')
   }
 
-  // 3. Hent eller lag abonnement
+  // 3. Get existing subscription or create a new one
   let sub = await reg.pushManager.getSubscription()
   if (!sub) {
     sub = await reg.pushManager.subscribe({
@@ -57,7 +62,7 @@ export async function subscribePush() {
     })
   }
 
-  // 4. Lagre i Supabase
+  // 4. Persist the subscription so the server can push notifications later
   const json = sub.toJSON()
   const { error } = await supabase.from('push_subscriptions').upsert(
     {

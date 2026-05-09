@@ -1,3 +1,10 @@
+// Main dashboard. Lists all assets owned by the current user and surfaces
+// tasks that need attention soon.
+// next_due is a generated column in Postgres (last_done + interval_days), so
+// it is read-only in the frontend — we never write it directly.
+// The attentionTasks panel shows any task whose effective due date
+// (fixed_due_date ?? next_due) falls within the next 7 days or is already
+// overdue, sorted by urgency.
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabaseClient'
 import Card from './components/Card'

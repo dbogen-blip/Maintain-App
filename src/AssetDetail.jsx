@@ -1,3 +1,13 @@
+// Detail view for a single asset. Shows all tasks and their maintenance history.
+// Data model: assets → tasks → maintenance_logs, each level with optional
+// file attachments stored in the 'asset-images' bucket.
+// taskGroups memo splits tasks into overdue / soon (≤14 days) / later /
+// unplanned buckets so the most urgent work is always visible first.
+// fixed_due_date takes precedence over next_due for all due-date display and
+// sorting — interval tasks and calendar tasks are handled uniformly via the
+// expression (fixed_due_date ?? next_due).
+// CarTaskPicker and HouseTaskPicker are category-specific preset pickers that
+// bulk-insert common tasks from a curated list.
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabaseClient'
 import { publicUrl, isImage } from './storage'

@@ -1,3 +1,14 @@
+// Form for creating and editing maintenance tasks.
+// Two scheduling modes:
+//   'interval'    — repeating task; next_due is computed in the DB as
+//                   last_done + interval_days (generated column, read-only here).
+//   'multi-fixed' — one or more specific calendar dates (up to 6 per save).
+//                   Each date is stored as a separate task row so that every
+//                   occurrence has its own due date, log history, and lifecycle.
+//                   When editing an existing fixed task, only the first date
+//                   is applied to avoid unintended row multiplication.
+// ensureTaskId() inserts a draft task row before file upload so the storage
+// path can include the real task id. The same id is reused on final save.
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { uploadTaskAttachment, deleteFile } from '../storage'
@@ -127,7 +138,7 @@ export default function TaskForm({ assetId, task, onClose, onSaved }) {
           last_done:      null,
         }))
         if (taskId) {
-          // editing: update just this one task with the first date
+          // When editing an existing fixed task, apply only the first date to avoid creating extra rows
           const { error } = await supabase.from('tasks').update({ ...base, fixed_due_date: dates[0], interval_days: null, last_done: null }).eq('id', taskId)
           if (error) throw error
         } else {

@@ -1,3 +1,13 @@
+// Form for creating and editing assets.
+// If the name field matches the Norwegian registration-number pattern
+// (2 letters + 4–5 digits; MC/ATV use 4 digits, cars use 5), a debounced
+// lookup fires against the lookup-vehicle Supabase Edge Function, which
+// proxies the Statens vegvesen API and returns pre-filled name, category,
+// and a description block of technical specs.
+// Cover-image upload requires a real asset id for the storage path. If the
+// asset hasn't been saved yet when the user picks an image, a draft row is
+// inserted first to obtain an id, and that id is reused when the form is
+// saved — avoiding a second INSERT.
 import { useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { uploadAssetCover, deleteFile } from '../storage'
@@ -16,7 +26,7 @@ const CATEGORIES = [
   'Elektriske og manuelle verktøy', 'Bensindrevne verktøy', 'Annet',
 ]
 
-// Norsk registreringsnummer: 2 bokstaver + 5 siffer (med eller uten mellomrom)
+// Norwegian plate: 2 letters + 4–5 digits (MC/ATV use 4, cars use 5), optional space
 const REGNR_RE = /^[A-Za-z]{2}\s?\d{4,5}$/
 
 export default function AssetForm({ asset, onClose, onSaved }) {

@@ -1,10 +1,11 @@
-// Hjelpefunksjoner for upload til Supabase Storage (bucket 'asset-images').
-// Filer organiseres som: {user_id}/{kontekst}/{kontekst-id}/{tilfeldig}-{filnavn}
-//
-// Kontekster:
-//   - assets/{asset_id}/cover-... (hovedbilde)
-//   - tasks/{task_id}/...          (vedlegg knyttet til en oppgave)
-//   - logs/{log_id}/...            (bilder/filer på utført vedlikehold)
+// Storage helpers for the single 'asset-images' Supabase bucket.
+// The bucket is public, so publicUrl() returns a permanent direct URL —
+// no signed URLs or expiry logic needed.
+// Path structure: {user_id}/{context}/{context-id}/{random}-{sanitized-filename}
+// Contexts:
+//   assets/{asset_id}/cover-...  — asset cover images
+//   tasks/{task_id}/...          — instruction docs and images attached to a task
+//   logs/{log_id}/...            — completion photos/files attached to a log entry
 
 import { supabase } from './supabaseClient'
 
@@ -34,7 +35,7 @@ export function publicUrl(path) {
   return data?.publicUrl ?? null
 }
 
-/** Last opp ett asset-coverbilde. Returnerer storage-path (lagre på assets.image_url som public URL). */
+/** Upload a cover image for an asset. Returns the storage path and its public URL. */
 export async function uploadAssetCover(assetId, file) {
   const userId = await getUserId()
   const path = `${userId}/assets/${assetId}/cover-${rand()}-${safeName(file.name)}`
@@ -46,7 +47,7 @@ export async function uploadAssetCover(assetId, file) {
   return { path, url: publicUrl(path) }
 }
 
-/** Last opp et vedlegg til en task. Returnerer informasjon for å sette inn i task_attachments. */
+/** Upload a file attachment for a task. Returns metadata for inserting into task_attachments. */
 export async function uploadTaskAttachment(taskId, file) {
   const userId = await getUserId()
   const path = `${userId}/tasks/${taskId}/${rand()}-${safeName(file.name)}`
@@ -64,7 +65,7 @@ export async function uploadTaskAttachment(taskId, file) {
   }
 }
 
-/** Last opp et bilde/fil til en maintenance_log. */
+/** Upload a photo or file for a maintenance log entry. Returns metadata for maintenance_log_attachments. */
 export async function uploadLogAttachment(logId, file) {
   const userId = await getUserId()
   const path = `${userId}/logs/${logId}/${rand()}-${safeName(file.name)}`
@@ -82,7 +83,7 @@ export async function uploadLogAttachment(logId, file) {
   }
 }
 
-/** Slett en fil fra storage og fra metadata-tabellen (caller velger). */
+/** Delete a file from storage. The caller is responsible for removing the metadata row. */
 export async function deleteFile(path) {
   if (!path) return
   await supabase.storage.from(BUCKET).remove([path])
