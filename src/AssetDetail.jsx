@@ -13,6 +13,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import { publicUrl, isImage } from './storage'
 import { categoryImgProps } from './categoryImages'
+import { formatNok, formatKm } from './lib/format'
 import Card from './components/Card'
 import Button from './components/Button'
 import Badge from './components/Badge'
@@ -217,8 +218,8 @@ export default function AssetDetail() {
                       <div className="row" style={{ justifyContent: 'space-between' }}>
                         <strong>{log.performed_on}</strong>
                         <span className="muted" style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                          {log.km_reading != null && <span>{log.km_reading.toLocaleString('nb-NO')} km</span>}
-                          {log.cost != null && <span>kr {log.cost}</span>}
+                          {log.km_reading != null && <span>{formatKm(log.km_reading)}</span>}
+                          {log.cost != null && <span>{formatNok(log.cost)}</span>}
                         </span>
                       </div>
                       {log.notes && <p style={{ margin: 'var(--space-1) 0 0', color: 'var(--color-text-muted)' }}>{log.notes}</p>}

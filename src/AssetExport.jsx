@@ -17,6 +17,7 @@ import { publicUrl, isImage } from './storage'
 import Button from './components/Button'
 import Icon from './components/Icon'
 import Spinner from './components/Spinner'
+import { formatNok, formatKm } from './lib/format'
 import './AssetExport.css'
 
 // Format "2026-05-09" → "09.05.2026"
@@ -26,15 +27,9 @@ function fmtDate(s) {
   return `${d}.${m}.${y}`
 }
 
-function fmtCost(n) {
-  if (n == null) return null
-  return `kr ${Number(n).toLocaleString('nb-NO')}`
-}
-
-function fmtKm(n) {
-  if (n == null) return null
-  return `${Number(n).toLocaleString('nb-NO')} km`
-}
+// Local aliases — keeps call sites readable while using the shared formatters
+const fmtCost = formatNok
+const fmtKm   = formatKm
 
 export default function AssetExport() {
   const { id: assetId } = useParams()
@@ -155,7 +150,7 @@ export default function AssetExport() {
             {hasCost && (
               <div className="export-stat">
                 <span className="export-stat-n">
-                  kr&nbsp;{totalCost.toLocaleString('nb-NO')}
+                  {formatNok(totalCost)}
                 </span>
                 <span className="export-stat-l">Total kostnad</span>
               </div>
@@ -164,7 +159,7 @@ export default function AssetExport() {
             {minKm != null && (
               <div className="export-stat">
                 <span className="export-stat-n">
-                  {minKm.toLocaleString('nb-NO')}–{maxKm.toLocaleString('nb-NO')} km
+                  {formatKm(minKm).replace(' km', '')}–{formatKm(maxKm)}
                 </span>
                 <span className="export-stat-l">Kilometerstand</span>
               </div>
