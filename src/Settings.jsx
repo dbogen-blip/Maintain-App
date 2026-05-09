@@ -12,6 +12,7 @@ import Button from './components/Button'
 import Badge from './components/Badge'
 import Icon from './components/Icon'
 import { Input, Checkbox } from './components/Input'
+import ConfirmDialog from './components/ConfirmDialog'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -32,6 +33,13 @@ export default function Settings() {
   const [publishedTemplates, setPublishedTemplates] = useState([])
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+  // deleteStep drives the account-deletion dialog sequence:
+  //   null              → no dialog open
+  //   'warn-published'  → info dialog: "you still have published templates"
+  //   'confirm1'        → first danger confirm
+  //   'confirm2'        → final danger confirm
+  const [deleteStep, setDeleteStep] = useState(null)
+  const [saveError, setSaveError] = useState(null)
 
   useEffect(() => {
     load()
@@ -46,14 +54,15 @@ export default function Settings() {
     setPublishedTemplates(data ?? [])
   }
 
-  async function handleDeleteAccount() {
+  function handleDeleteAccount() {
     if (publishedTemplates.length > 0) {
-      alert(`Du har ${publishedTemplates.length} publisert${publishedTemplates.length > 1 ? 'e' : ''} mal${publishedTemplates.length > 1 ? 'er' : ''} i fellesbiblioteket.\n\nFjern publiseringen fra hver eiendel før du sletter kontoen, hvis du ønsker å fjerne dem fra biblioteket.\n\nMaler du lar stå vil forbli tilgjengelige for andre selv etter at kontoen er slettet.`)
-      return
+      setDeleteStep('warn-published')
+    } else {
+      setDeleteStep('confirm1')
     }
-    if (!window.confirm('Er du helt sikker på at du vil slette kontoen din?\n\nAlle eiendeler, oppgaver og historikk slettes permanent. Dette kan ikke angres.')) return
-    if (!window.confirm('Siste bekreftelse: slett kontoen permanent?')) return
+  }
 
+  async function runDeleteAccount() {
     setDeletingAccount(true)
     setDeleteError(null)
     try {
@@ -69,6 +78,7 @@ export default function Settings() {
     } catch (e) {
       setDeleteError(e.message)
       setDeletingAccount(false)
+      setDeleteStep(null)
     }
   }
 
@@ -124,7 +134,7 @@ export default function Settings() {
       })
       .eq('user_id', prefs.user_id)
     setSaving(false)
-    if (error) return alert(error.message)
+    if (error) { setSaveError(error.message); return }
     setSavedAt(new Date())
   }
 
@@ -317,6 +327,52 @@ export default function Settings() {
           Slett kontoen min permanent
         </Button>
       </Card>
+
+      {/* Save-error alert (replaces native alert()) */}
+      <ConfirmDialog
+        open={!!saveError}
+        title="Lagring feilet"
+        message={saveError}
+        infoOnly
+        onClose={() => setSaveError(null)}
+      />
+
+      {/* Account deletion — step 1: info about published templates */}
+      <ConfirmDialog
+        open={deleteStep === 'warn-published'}
+        title="Du har publiserte maler"
+        message={`Du har ${publishedTemplates.length} publisert${publishedTemplates.length !== 1 ? 'e maler' : ' mal'} i fellesbiblioteket.\n\nDe vil forbli tilgjengelige for andre selv etter at kontoen er slettet. Gå inn på hver eiendel og klikk «Fjern publisering» hvis du vil ta dem ned først.`}
+        confirmLabel="Fortsett uansett"
+        cancelLabel="Avbryt"
+        variant="danger"
+        onConfirm={() => setDeleteStep('confirm1')}
+        onClose={() => setDeleteStep(null)}
+      />
+
+      {/* Account deletion — step 2: first danger confirm */}
+      <ConfirmDialog
+        open={deleteStep === 'confirm1'}
+        title="Slett kontoen?"
+        message="Alle eiendeler, oppgaver og historikk slettes permanent. Dette kan ikke angres."
+        confirmLabel="Ja, slett kontoen"
+        cancelLabel="Avbryt"
+        variant="danger"
+        onConfirm={() => setDeleteStep('confirm2')}
+        onClose={() => setDeleteStep(null)}
+      />
+
+      {/* Account deletion — step 3: final confirmation */}
+      <ConfirmDialog
+        open={deleteStep === 'confirm2'}
+        title="Siste bekreftelse"
+        message="Er du helt sikker? Dette sletter kontoen permanent og kan ikke angres."
+        confirmLabel="Slett permanent"
+        cancelLabel="Avbryt"
+        variant="danger"
+        loading={deletingAccount}
+        onConfirm={runDeleteAccount}
+        onClose={() => setDeleteStep(null)}
+      />
     </div>
   )
 }

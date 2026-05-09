@@ -26,6 +26,7 @@ import PublishModal from './forms/PublishModal'
 import HouseTaskPicker from './HouseTaskPicker'
 import CarTaskPicker from './CarTaskPicker'
 import { getTemplateForAsset } from './templates'
+import ConfirmDialog from './components/ConfirmDialog'
 import './AssetDetail.css'
 
 function daysUntil(dateStr) {
@@ -64,6 +65,8 @@ export default function AssetDetail() {
   const [showPublish, setShowPublish]       = useState(false)
   const [publishedTemplate, setPublishedTemplate] = useState(null)
   const [showHousePicker, setShowHousePicker]     = useState(false)
+  const [confirmDeleteTask, setConfirmDeleteTask] = useState(null)  // task object | null
+  const [confirmDeleteAsset, setConfirmDeleteAsset] = useState(false)
 
   useEffect(() => { load() }, [assetId])
 
@@ -124,13 +127,12 @@ export default function AssetDetail() {
   }
 
   async function deleteTask(taskId) {
-    if (!confirm('Slette oppgaven og all historikk?')) return
     await supabase.from('tasks').delete().eq('id', taskId)
+    setConfirmDeleteTask(null)
     load()
   }
 
   async function deleteAsset() {
-    if (!confirm('Slette eiendelen, alle oppgaver og historikk?')) return
     await supabase.from('assets').delete().eq('id', assetId)
     navigate('/')
   }
@@ -246,7 +248,7 @@ export default function AssetDetail() {
             <div className="row" style={{ marginTop: 'var(--space-4)', flexWrap: 'wrap' }}>
               <Button icon="check" onClick={() => setLogTask(task)}>Marker som utført</Button>
               <Button variant="secondary" icon="edit" onClick={() => setEditTask(task)}>Rediger</Button>
-              <Button variant="danger" icon="trash" size="sm" onClick={() => deleteTask(task.id)}>Slett</Button>
+              <Button variant="danger" icon="trash" size="sm" onClick={() => setConfirmDeleteTask(task)}>Slett</Button>
             </div>
           </div>
         )}
@@ -295,7 +297,7 @@ export default function AssetDetail() {
               <Button variant="secondary" icon="edit" onClick={() => setEditAsset(true)}>
                 <span className="asset-btn-label">Rediger</span>
               </Button>
-              <Button variant="danger" icon="trash" onClick={deleteAsset}>
+              <Button variant="danger" icon="trash" onClick={() => setConfirmDeleteAsset(true)}>
                 <span className="asset-btn-label">Slett</span>
               </Button>
             </div>
@@ -378,6 +380,28 @@ export default function AssetDetail() {
       {showPublish && (
         <PublishModal asset={asset} onClose={() => setShowPublish(false)} onPublished={load} />
       )}
+
+      {/* Delete task confirmation */}
+      <ConfirmDialog
+        open={!!confirmDeleteTask}
+        title="Slett oppgave"
+        message={`«${confirmDeleteTask?.title}» og all tilhørende historikk slettes permanent. Dette kan ikke angres.`}
+        confirmLabel="Slett oppgave"
+        variant="danger"
+        onConfirm={() => deleteTask(confirmDeleteTask.id)}
+        onClose={() => setConfirmDeleteTask(null)}
+      />
+
+      {/* Delete asset confirmation */}
+      <ConfirmDialog
+        open={confirmDeleteAsset}
+        title="Slett eiendel"
+        message={`«${asset?.name}» slettes sammen med alle oppgaver og historikk. Dette kan ikke angres.`}
+        confirmLabel="Slett eiendel"
+        variant="danger"
+        onConfirm={deleteAsset}
+        onClose={() => setConfirmDeleteAsset(false)}
+      />
     </div>
   )
 }

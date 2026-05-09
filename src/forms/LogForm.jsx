@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { uploadLogAttachment, deleteFile } from '../storage'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { Input, Textarea } from '../components/Input'
 import Button from '../components/Button'
 import FileUpload from '../components/FileUpload'
@@ -28,6 +29,11 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
   const [error, setError] = useState(null)
   const [logId, setLogId] = useState(null)
   const [attachments, setAttachments] = useState([])
+  const [confirmDeleteAtt, setConfirmDeleteAtt] = useState(null) // attachment object | null
+  // renewalNeeded tracks whether a follow-up task should be created for
+  // fixed_due_date tasks. Using dedicated state (instead of !logId) means
+  // the renewal still fires even when logId was pre-created during file upload.
+  const [renewalNeeded, setRenewalNeeded] = useState(!!task.fixed_due_date)
 
   function setField(k, v) { setForm(f => ({ ...f, [k]: v })) }
 
@@ -72,8 +78,7 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
     }
   }
 
-  async function handleAttachmentDelete(att) {
-    if (!confirm(`Slette ${att.file_name}?`)) return
+  async function doDeleteAttachment(att) {
     try {
       await deleteFile(att.file_path)
       const { error } = await supabase
@@ -84,6 +89,8 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
       setAttachments(prev => prev.filter(a => a.id !== att.id))
     } catch (e) {
       setError(e.message)
+    } finally {
+      setConfirmDeleteAtt(null)
     }
   }
 
@@ -117,7 +124,10 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
 
       // Auto-renewal: advance by exactly one year from the original fixed date,
       // not from today, so the calendar anchor is preserved indefinitely.
-      if (task.fixed_due_date && !logId) {
+      // renewalNeeded (not !logId) is used as the guard so the renewal fires
+      // even when a log row was pre-created during file upload.
+      if (renewalNeeded) {
+        setRenewalNeeded(false) // prevent duplicate if user retries on error
         const [y, m, d] = task.fixed_due_date.split('-')
         const nextDate = `${parseInt(y) + 1}-${m}-${d}`
         await supabase.from('tasks').insert({
@@ -181,7 +191,7 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
         <FileUpload
           onSelect={handleAttachmentSelect}
           existing={attachments}
-          onDelete={handleAttachmentDelete}
+          onDelete={att => setConfirmDeleteAtt(att)}
           accept="image/*,application/pdf"
           multiple
           hint="Vis hva du gjorde — nyttig hvis du senere skal repetere"
@@ -194,6 +204,16 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
         <Button variant="secondary" onClick={onClose}>Avbryt</Button>
         <Button onClick={handleSave} loading={saving} icon="check">Lagre logg</Button>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteAtt}
+        title="Slett vedlegg"
+        message={`«${confirmDeleteAtt?.file_name}» slettes permanent.`}
+        confirmLabel="Slett"
+        variant="danger"
+        onConfirm={() => doDeleteAttachment(confirmDeleteAtt)}
+        onClose={() => setConfirmDeleteAtt(null)}
+      />
     </Modal>
   )
 }

@@ -13,6 +13,7 @@ import Button from './components/Button'
 import Badge from './components/Badge'
 import Icon from './components/Icon'
 import EmptyState from './components/EmptyState'
+import ConfirmDialog from './components/ConfirmDialog'
 import Spinner from './components/Spinner'
 import AssetForm from './forms/AssetForm'
 import InstallPrompt from './components/InstallPrompt'
@@ -51,10 +52,7 @@ function assetStatus(tasks) {
 
 export default function Home() {
   const navigate = useNavigate()
-
-  function handleSignOut() {
-    if (window.confirm('Er du sikker på at du vil logge ut?')) supabase.auth.signOut()
-  }
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const [assets, setAssets]         = useState([])
   const [doneCount, setDoneCount]   = useState(0)
   const [loading, setLoading]       = useState(true)
@@ -167,7 +165,7 @@ export default function Home() {
           <button type="button" className="topbar-nav-btn" onClick={() => navigate('/settings')}>
             <Icon name="settings" size={16} /><span className="nav-label">Innstillinger</span>
           </button>
-          <button type="button" className="topbar-nav-btn topbar-nav-btn--muted" onClick={handleSignOut}>
+          <button type="button" className="topbar-nav-btn topbar-nav-btn--muted" onClick={() => setConfirmLogout(true)}>
             <Icon name="logout" size={16} /><span className="nav-label">Logg ut</span>
           </button>
         </nav>
@@ -335,6 +333,15 @@ export default function Home() {
           onSaved={fetchAll}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Logg ut"
+        message="Er du sikker på at du vil logge ut?"
+        confirmLabel="Logg ut"
+        onConfirm={() => { setConfirmLogout(false); supabase.auth.signOut() }}
+        onClose={() => setConfirmLogout(false)}
+      />
     </div>
   )
 }

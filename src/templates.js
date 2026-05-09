@@ -135,8 +135,8 @@ export async function searchTemplates({ q = '', category = '', sort = 'popular',
     .limit(limit)
 
   if (q.trim()) {
-    // Use Postgres full-text search via textSearch (simple config covers Norwegian)
-    query = query.textSearch('search_tsv', q.trim(), { config: 'simple', type: 'websearch' })
+    // Norwegian stemming: "vask", "vasker", "vasking" all hit the same stem.
+    query = query.textSearch('search_tsv', q.trim(), { config: 'norwegian', type: 'websearch' })
   }
   if (category) {
     query = query.eq('category', category)
