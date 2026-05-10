@@ -45,12 +45,16 @@ export default function Settings() {
   const [trashLoading, setTrashLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const [confirmPurge, setConfirmPurge] = useState(null) // asset object | null
+  const [calendarToken, setCalendarToken] = useState(null)
+  const [calendarBusy, setCalendarBusy] = useState(false)
+  const [calendarCopied, setCalendarCopied] = useState(false)
 
   useEffect(() => {
     load()
     refreshPushStatus()
     loadPublishedTemplates()
     loadTrash()
+    loadCalendarToken()
   }, [])
 
   async function loadTrash() {
@@ -82,6 +86,41 @@ export default function Settings() {
     setTrashedAssets(prev => prev.filter(a => a.id !== asset.id))
     setConfirmPurge(null)
     setToast({ message: `«${asset.name}» er slettet permanent` })
+  }
+
+  async function loadCalendarToken() {
+    const { data } = await supabase
+      .from('calendar_tokens')
+      .select('token')
+      .maybeSingle()
+    if (data) setCalendarToken(data.token)
+  }
+
+  async function generateCalendarToken() {
+    setCalendarBusy(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data } = await supabase
+      .from('calendar_tokens')
+      .upsert({ user_id: user.id }, { onConflict: 'user_id' })
+      .select('token')
+      .single()
+    setCalendarToken(data.token)
+    setCalendarBusy(false)
+  }
+
+  async function revokeCalendarToken() {
+    await supabase.from('calendar_tokens').delete().eq('token', calendarToken)
+    setCalendarToken(null)
+  }
+
+  function calendarUrl() {
+    return `${SUPABASE_URL}/functions/v1/calendar-feed?token=${calendarToken}`
+  }
+
+  async function copyCalendarUrl() {
+    await navigator.clipboard.writeText(calendarUrl())
+    setCalendarCopied(true)
+    setTimeout(() => setCalendarCopied(false), 2000)
   }
 
   async function loadPublishedTemplates() {
@@ -332,6 +371,54 @@ export default function Settings() {
               </Button>
             )}
             {pushError && <p style={{ color: 'var(--color-danger-600)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-2)' }}>{pushError}</p>}
+          </>
+        )}
+      </Card>
+
+      {/* Kalenderabonnement */}
+      <Card padding={5} style={{ marginBottom: 'var(--space-4)' }}>
+        <h2 style={{ marginBottom: 'var(--space-1)' }}>Kalenderabonnement</h2>
+        <p className="muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
+          Abonner på vedlikeholdsoppgavene dine i Google Calendar, Apple Kalender eller Outlook.
+          Kalenderen oppdateres automatisk.
+        </p>
+        {!calendarToken ? (
+          <Button onClick={generateCalendarToken} loading={calendarBusy} icon="calendar">
+            Opprett kalenderlenke
+          </Button>
+        ) : (
+          <>
+            <div style={{
+              display: 'flex', gap: 'var(--space-2)', alignItems: 'center',
+              background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)', padding: 'var(--space-2) var(--space-3)',
+              marginBottom: 'var(--space-3)',
+            }}>
+              <code style={{
+                flex: 1, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                minWidth: 0,
+              }}>
+                {calendarUrl()}
+              </code>
+            </div>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <Button icon="copy" onClick={copyCalendarUrl}>
+                {calendarCopied ? 'Kopiert!' : 'Kopier URL'}
+              </Button>
+              <a
+                href={`webcal://${calendarUrl().replace(/^https?:\/\//, '')}`}
+                style={{ textDecoration: 'none' }}
+              >
+                <Button variant="secondary" icon="calendar">Åpne i Kalender</Button>
+              </a>
+              <Button variant="secondary" onClick={revokeCalendarToken} loading={calendarBusy}>
+                Tilbakekall lenke
+              </Button>
+            </div>
+            <p className="muted" style={{ fontSize: 'var(--font-size-xs)', marginTop: 'var(--space-2)' }}>
+              Alle med denne lenken kan se oppgavene dine. Klikk «Tilbakekall» for å ugyldiggjøre den.
+            </p>
           </>
         )}
       </Card>
