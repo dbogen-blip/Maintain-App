@@ -1,11 +1,6 @@
 // Form for logging a completed maintenance event to the maintenance_logs table.
 // km_reading is only shown for vehicle categories (Bil, MC/ATV) where odometer
 // tracking is meaningful.
-// Auto-renewal: when a fixed_due_date task is marked done, a new identical task
-// row is inserted with fixed_due_date + 1 year. This preserves the original
-// calendar date (e.g. annual service always due in March) rather than rolling
-// forward from the completion date. The !logId guard prevents duplicate renewal
-// if the log row was pre-created by ensureLogId().
 // ensureLogId() pre-creates the log row before file upload so the storage
 // path can reference the real log id. The same row is updated on final save.
 import { useState } from 'react'
@@ -30,11 +25,6 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
   const [logId, setLogId] = useState(null)
   const [attachments, setAttachments] = useState([])
   const [confirmDeleteAtt, setConfirmDeleteAtt] = useState(null) // attachment object | null
-  // renewalNeeded tracks whether a follow-up task should be created for
-  // fixed_due_date tasks. Using dedicated state (instead of !logId) means
-  // the renewal still fires even when logId was pre-created during file upload.
-  const [renewalNeeded, setRenewalNeeded] = useState(!!task.fixed_due_date)
-
   function setField(k, v) { setForm(f => ({ ...f, [k]: v })) }
 
   async function ensureLogId() {
@@ -128,26 +118,6 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
       } else {
         const { error } = await supabase.from('maintenance_logs').insert(payload)
         if (error) throw error
-      }
-
-      // Auto-renewal: advance by exactly one year from the original fixed date,
-      // not from today, so the calendar anchor is preserved indefinitely.
-      // renewalNeeded (not !logId) is used as the guard so the renewal fires
-      // even when a log row was pre-created during file upload.
-      if (renewalNeeded) {
-        setRenewalNeeded(false) // prevent duplicate if user retries on error
-        const [y, m, d] = task.fixed_due_date.split('-')
-        const nextDate = `${parseInt(y) + 1}-${m}-${d}`
-        await supabase.from('tasks').insert({
-          asset_id:      assetId,
-          title:         task.title,
-          priority:      task.priority,
-          description:   task.description,
-          notes:         task.notes,
-          fixed_due_date: nextDate,
-          interval_days: null,
-          last_done:     null,
-        })
       }
 
       // For km-based tasks, advance the task's last_done_km so next_due_km
