@@ -17,17 +17,11 @@ import { publicUrl, isImage } from './storage'
 import Button from './components/Button'
 import Icon from './components/Icon'
 import Spinner from './components/Spinner'
-import { formatNok, formatKm } from './lib/format'
+import { formatNok, formatKm, formatDate } from './lib/format'
 import './AssetExport.css'
 
-// Format "2026-05-09" → "09.05.2026"
-function fmtDate(s) {
-  if (!s) return '—'
-  const [y, m, d] = s.split('-')
-  return `${d}.${m}.${y}`
-}
-
 // Local aliases — keeps call sites readable while using the shared formatters
+const fmtDate = (s) => formatDate(s) ?? '—'
 const fmtCost = formatNok
 const fmtKm   = formatKm
 

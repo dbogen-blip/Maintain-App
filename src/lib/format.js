@@ -18,5 +18,16 @@ export function formatNok(value) {
 // Returns null when value is null/undefined.
 export function formatKm(value) {
   if (value == null) return null
-  return value.toLocaleString('nb-NO') + ' km' // non-breaking space before km
+  return value.toLocaleString('nb-NO') + ' km'
+}
+
+// Format an ISO date string (YYYY-MM-DD) or Date object as "12. mai 2029".
+// Returns null when value is null/undefined/empty.
+export function formatDate(value) {
+  if (!value) return null
+  const str = typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10)
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('nb-NO', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
 }

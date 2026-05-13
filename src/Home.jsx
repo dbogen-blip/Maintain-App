@@ -18,6 +18,7 @@ import Spinner from './components/Spinner'
 import AssetForm from './forms/AssetForm'
 import InstallPrompt from './components/InstallPrompt'
 import { categoryImgProps } from './categoryImages'
+import { formatDate } from './lib/format'
 import './Home.css'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
@@ -55,7 +56,7 @@ async function processEuRefresh() {
         .is('deleted_at', null)
         .maybeSingle()
 
-      const today = new Date().toLocaleDateString('nb-NO')
+      const today = formatDate(new Date())
       if (euTask?.id) {
         await supabase.from('tasks').update({
           fixed_due_date: data.eu_date,

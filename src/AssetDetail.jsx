@@ -13,7 +13,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import { publicUrl, isImage } from './storage'
 import { categoryImgProps } from './categoryImages'
-import { formatNok, formatKm } from './lib/format'
+import { formatNok, formatKm, formatDate } from './lib/format'
 import Card from './components/Card'
 import Button from './components/Button'
 import Badge from './components/Badge'
@@ -231,7 +231,7 @@ export default function AssetDetail() {
               {task.interval_type === 'km'
                 ? <span><Icon name="car" size={14} /> Hver {task.interval_km?.toLocaleString('nb-NO')} km</span>
                 : task.fixed_due_date
-                ? <span><Icon name="calendar" size={14} /> Fast dato: {task.fixed_due_date}</span>
+                ? <span><Icon name="calendar" size={14} /> Fast dato: {formatDate(task.fixed_due_date)}</span>
                 : task.interval_days
                 ? <span><Icon name="refresh" size={14} /> Hver {task.interval_days} dag</span>
                 : null
@@ -239,7 +239,7 @@ export default function AssetDetail() {
               {task.interval_type === 'km'
                 ? <span><Icon name="clock" size={14} /> Sist ved: {task.last_done_km != null ? task.last_done_km.toLocaleString('nb-NO') + ' km' : 'aldri'}</span>
                 : !task.fixed_due_date
-                ? <span><Icon name="clock" size={14} /> Sist: {task.last_done ?? 'aldri'}</span>
+                ? <span><Icon name="clock" size={14} /> Sist: {formatDate(task.last_done) ?? 'aldri'}</span>
                 : null
               }
               {task.priority !== 2 && <span>Prioritet: {priorityLabel(task.priority)}</span>}
@@ -294,7 +294,7 @@ export default function AssetDetail() {
                   {task.maintenance_logs.map(log => (
                     <li key={log.id} className="log-item">
                       <div className="row" style={{ justifyContent: 'space-between' }}>
-                        <strong>{log.performed_on}</strong>
+                        <strong>{formatDate(log.performed_on)}</strong>
                         <span className="muted" style={{ display: 'flex', gap: 'var(--space-3)' }}>
                           {log.km_reading != null && <span>{formatKm(log.km_reading)}</span>}
                           {log.cost != null && <span>{formatNok(log.cost)}</span>}
@@ -362,7 +362,7 @@ export default function AssetDetail() {
               <h1 style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '30ch' }}>{asset.name}</h1>
               <div className="row" style={{ marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {asset.category && <Badge>{asset.category}</Badge>}
-                {asset.purchased_at && <Badge variant="neutral">Kjøpt {asset.purchased_at}</Badge>}
+                {asset.purchased_at && <Badge variant="neutral">Kjøpt {formatDate(asset.purchased_at)}</Badge>}
                 {asset.postal_code && <Badge variant="neutral"><Icon name="map-pin" size={11} /> {asset.postal_code}</Badge>}
               </div>
             </div>
