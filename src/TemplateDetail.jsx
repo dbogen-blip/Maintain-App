@@ -118,6 +118,11 @@ export default function TemplateDetail() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
             <div>
               <h1>{tpl.name}</h1>
+              {tpl.author_name && (
+                <p style={{ margin: '2px 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                  av {tpl.author_name}
+                </p>
+              )}
               <div className="row" style={{ marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {tpl.category && <Badge>{tpl.category}</Badge>}
                 <Badge variant="neutral">

@@ -14,10 +14,11 @@ const BUCKET = 'asset-images'
 // includeImage: if true the asset's cover photo is copied to the template;
 // if false the template gets image_url = NULL and the library falls back to
 // the standard category image.
-export async function publishAsset(assetId, includeImage = true) {
+export async function publishAsset(assetId, includeImage = true, authorName = null) {
   const { data, error } = await supabase.rpc('publish_asset_as_template', {
     p_asset_id: assetId,
     p_include_image: includeImage,
+    p_author_name: authorName || null,
   })
   if (error) throw error
   return data // template id
@@ -35,7 +36,7 @@ export async function unpublishAsset(assetId) {
 export async function getTemplateForAsset(assetId) {
   const { data } = await supabase
     .from('asset_templates')
-    .select('id, created_at, updated_at, views_count, forks_count')
+    .select('id, created_at, updated_at, views_count, forks_count, author_name')
     .eq('source_asset_id', assetId)
     .maybeSingle()
   return data
@@ -130,7 +131,7 @@ export async function searchTemplates({ q = '', category = '', sort = 'popular',
 
   let query = supabase
     .from('asset_templates')
-    .select('id, name, category, description, image_url, forks_count, stars_count, views_count, created_at')
+    .select('id, name, category, description, image_url, forks_count, stars_count, views_count, created_at, author_name')
     .order(orderCol, { ascending: false })
     .limit(limit)
 
@@ -166,7 +167,7 @@ export async function getTemplate(templateId) {
   const { data, error } = await supabase
     .from('asset_templates')
     .select(`
-      id, name, category, description, image_url, views_count, forks_count, stars_count, created_at,
+      id, name, category, description, image_url, views_count, forks_count, stars_count, created_at, author_name,
       tasks:task_templates (
         id, title, interval_days, priority, description, display_order,
         attachments:task_template_attachments(id, file_path, file_name, mime_type, size_bytes)

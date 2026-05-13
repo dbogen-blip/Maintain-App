@@ -141,6 +141,11 @@ export default function Templates() {
               </div>
               <div className="asset-body">
                 <h3>{t.name}</h3>
+                {t.author_name && (
+                  <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 2, marginBottom: 0 }}>
+                    av {t.author_name}
+                  </p>
+                )}
                 {t.description && (
                   <p className="muted" style={{ fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-1)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {t.description}

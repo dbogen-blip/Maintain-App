@@ -1,4 +1,6 @@
 // Modal for publishing an asset as a public template.
+// On the very first publish the user is asked to choose a display name, which
+// is stored in notification_preferences.display_name and shown in the library.
 // If the asset has a cover image, the user can toggle whether to include it.
 // When excluded (or when the asset has no image), the template's image_url
 // is NULL and the library shows the standard category image instead.
@@ -7,18 +9,23 @@ import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Button from '../components/Button'
 import Icon from '../components/Icon'
+import { Input } from '../components/Input'
 import { publishAsset, unpublishAsset, getTemplateForAsset } from '../templates'
 import { categoryImgProps } from '../categoryImages'
+import { supabase } from '../supabaseClient'
 
 export default function PublishModal({ asset, onClose, onPublished }) {
   const [published, setPublished]       = useState(null)
   const [busy, setBusy]                 = useState(false)
   const [error, setError]               = useState(null)
   const [confirmUnpublish, setConfirmUnpublish] = useState(false)
-  // Default to sharing the image if the asset already has one
   const [includeImage, setIncludeImage] = useState(!!asset?.image_url)
 
-  useEffect(() => { refresh() }, [asset?.id])
+  // Display-name state
+  const [displayName, setDisplayName]   = useState('')
+  const [nameLoaded, setNameLoaded]     = useState(false)
+
+  useEffect(() => { refresh(); loadDisplayName() }, [asset?.id])
 
   async function refresh() {
     if (!asset?.id) return
@@ -26,10 +33,37 @@ export default function PublishModal({ asset, onClose, onPublished }) {
     setPublished(t)
   }
 
+  async function loadDisplayName() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('notification_preferences')
+      .select('display_name')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    setDisplayName(data?.display_name ?? '')
+    setNameLoaded(true)
+  }
+
+  async function saveDisplayName(name) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase
+      .from('notification_preferences')
+      .update({ display_name: name || null })
+      .eq('user_id', user.id)
+  }
+
   async function handlePublish() {
+    if (!published && !displayName.trim()) {
+      setError('Velg et visningsnavn før du publiserer')
+      return
+    }
     setBusy(true); setError(null)
     try {
-      await publishAsset(asset.id, includeImage)
+      const name = displayName.trim() || null
+      if (name) await saveDisplayName(name)
+      await publishAsset(asset.id, includeImage, name)
       await refresh()
       onPublished?.()
     } catch (e) {
@@ -53,8 +87,10 @@ export default function PublishModal({ asset, onClose, onPublished }) {
     }
   }
 
-  // Which image will appear in the library
   const previewUrl = includeImage && asset?.image_url ? asset.image_url : null
+
+  // Show name field only on first-time publish and when name isn't already set
+  const showNameField = nameLoaded && !published && !displayName
 
   return (
     <Modal title="Publiser som mal" onClose={onClose}>
@@ -62,6 +98,47 @@ export default function PublishModal({ asset, onClose, onPublished }) {
         Publiserer du <strong>{asset?.name}</strong> blir den synlig for alle i fellesbiblioteket.
         Andre kan kopiere malen til sin egen konto med ett klikk.
       </p>
+
+      {/* Display name — shown on first publish if not already set */}
+      {showNameField && (
+        <div style={{
+          background: 'var(--color-surface-alt)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--space-4)',
+          marginBottom: 'var(--space-4)',
+          borderLeft: '3px solid var(--color-primary-400)',
+        }}>
+          <p style={{ margin: '0 0 var(--space-3)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
+            Velg et visningsnavn som vises i biblioteket.
+          </p>
+          <Input
+            label="Visningsnavn"
+            placeholder="f.eks. Ola Nordmann eller @ola"
+            value={displayName}
+            onChange={e => { setDisplayName(e.target.value); setError(null) }}
+            autoFocus
+          />
+        </div>
+      )}
+
+      {/* Show current display name if already set and not yet published */}
+      {nameLoaded && !published && displayName && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+          marginBottom: 'var(--space-4)',
+          fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)',
+        }}>
+          <Icon name="user" size={14} />
+          Publiseres som <strong style={{ color: 'var(--color-text)', marginLeft: 4 }}>{displayName}</strong>
+          <button
+            type="button"
+            onClick={() => setDisplayName('')}
+            style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: 'var(--font-size-sm)', padding: 0, marginLeft: 4 }}
+          >
+            Endre
+          </button>
+        </div>
+      )}
 
       {/* Image toggle — only shown when the asset has a cover photo */}
       {asset?.image_url && (
@@ -72,7 +149,6 @@ export default function PublishModal({ asset, onClose, onPublished }) {
           padding: 'var(--space-3) var(--space-4)',
           marginBottom: 'var(--space-4)',
         }}>
-          {/* Preview of what will appear in the library */}
           <div style={{
             width: 72, height: 56, flexShrink: 0,
             borderRadius: 'var(--radius-md)',
@@ -96,7 +172,6 @@ export default function PublishModal({ asset, onClose, onPublished }) {
                     : 'Standard kategori-bilde brukes'}
                 </div>
               </div>
-              {/* Toggle switch */}
               <div
                 onClick={() => setIncludeImage(v => !v)}
                 style={{
@@ -159,6 +234,9 @@ export default function PublishModal({ asset, onClose, onPublished }) {
           <div className="row">
             <Icon name="check" size={16} />
             <strong>Publisert</strong>
+            {published.author_name && (
+              <span style={{ marginLeft: 4, fontWeight: 'normal' }}>· av {published.author_name}</span>
+            )}
           </div>
           <div style={{ marginTop: 'var(--space-1)' }}>
             {published.forks_count} har brukt malen · {published.views_count} visninger
