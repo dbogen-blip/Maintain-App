@@ -44,13 +44,18 @@ Deno.serve(async (req) => {
   const karosseri = teknisk?.karosseriOgLasteplan?.karosseritype?.kodeVerdi ?? '' // SA=bobil
   const arskode  = kd.forstegangsregistrering?.registrertForstegangNorgeDato?.slice(0, 4) ?? ''
 
+  // spesialkarosseriTekst from ovrigeTekniskeData (e.g. "Campingvogner")
+  const ovrige: any[] = teknisk?.ovrigeTekniskeData ?? []
+  const spesial = ovrige.find((o: any) => o.datafeltNavn === 'spesialkarosseriTekst')?.datafeltVerdi?.toLowerCase() ?? ''
+
   // Kategori-mapping
   let category = 'Bil'
-  if (karosseri === 'SA') category = 'Bobil'
-  else if (/^M/.test(typeKode))  category = 'Bil'
-  else if (/^N/.test(typeKode))  category = 'Bil'
-  else if (/^L/.test(typeKode))  category = 'MC/ATV'
-  else if (/^O/.test(typeKode))  category = 'Tilhenger'
+  if (spesial.includes('camping'))   category = 'Campingvogn'
+  else if (karosseri === 'SA')       category = 'Bobil'
+  else if (/^M/.test(typeKode))      category = 'Bil'
+  else if (/^N/.test(typeKode))      category = 'Bil'
+  else if (/^L/.test(typeKode))      category = 'MC/ATV'
+  else if (/^O/.test(typeKode))      category = 'Tilhenger'
 
   // Tekniske data til beskrivelse
   const dim   = teknisk?.dimensjoner
