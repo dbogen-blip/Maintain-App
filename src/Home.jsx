@@ -20,6 +20,67 @@ import InstallPrompt from './components/InstallPrompt'
 import { categoryImgProps } from './categoryImages'
 import './Home.css'
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+
+// Runs on app open: finds pending EU-kontroll refresh jobs for the current user
+// (inserted when they mark an EU-kontroll task as done), fetches the new date
+// from Vegvesenet, and updates the task. Only fires for active users since it
+// requires the app to be open.
+async function processEuRefresh() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: jobs } = await supabase
+    .from('vehicle_eu_refresh')
+    .select('*')
+    .eq('user_id', user.id)
+    .is('processed_at', null)
+    .lte('refresh_after', new Date().toISOString())
+
+  if (!jobs?.length) return
+
+  for (const job of jobs) {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/functions/v1/lookup-vehicle?regnr=${encodeURIComponent(job.regnr)}`
+      )
+      const data = await res.json()
+      if (!res.ok || data.error || !data.eu_date) continue
+
+      const { data: euTask } = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('asset_id', job.asset_id)
+        .ilike('title', 'EU-kontroll')
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      const today = new Date().toLocaleDateString('nb-NO')
+      if (euTask?.id) {
+        await supabase.from('tasks').update({
+          fixed_due_date: data.eu_date,
+          description:    `Forfallsdato automatisk oppdatert fra Statens vegvesen ${today}.`,
+        }).eq('id', euTask.id)
+      } else {
+        await supabase.from('tasks').insert({
+          asset_id:       job.asset_id,
+          title:          'EU-kontroll',
+          fixed_due_date: data.eu_date,
+          description:    `Forfallsdato automatisk oppdatert fra Statens vegvesen ${today}.`,
+          priority:       1,
+        })
+      }
+
+      await supabase
+        .from('vehicle_eu_refresh')
+        .update({ processed_at: new Date().toISOString() })
+        .eq('id', job.id)
+    } catch (e) {
+      console.warn('EU-refresh feilet for', job.regnr, e)
+    }
+  }
+}
+
 function categoryIcon(category) {
   const c = (category || '').toLowerCase()
   if (c === 'bil' || c === 'mc') return 'car'
@@ -70,7 +131,7 @@ export default function Home() {
   const [editing, setEditing]       = useState(null)
   const [markingId, setMarkingId]   = useState(null)
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => { fetchAll(); processEuRefresh() }, [])
 
   async function fetchAll() {
     setLoading(true)
@@ -78,7 +139,7 @@ export default function Home() {
     const [{ data }, { data: kmRows }] = await Promise.all([
       supabase
         .from('assets')
-        .select('id, name, category, description, image_url, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
+        .select('id, name, category, description, image_url, regnr, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
         .is('deleted_at', null)
         .order('name'),
       // Latest km reading per asset (used to evaluate km-based task urgency)
@@ -107,6 +168,26 @@ export default function Home() {
       performed_on: new Date().toISOString().slice(0, 10),
     })
     setMarkingId(null)
+
+    // If this is an EU-kontroll task and the asset has a regnr, schedule refresh
+    const isEu = task.title?.toLowerCase().includes('eu-kontroll')
+    const parentAsset = assets.find(a => a.id === task.assetId)
+    if (isEu && parentAsset?.regnr) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const refreshAfter = new Date()
+        refreshAfter.setMonth(refreshAfter.getMonth() + 6)
+        await supabase.from('vehicle_eu_refresh').delete()
+          .eq('asset_id', task.assetId).is('processed_at', null)
+        await supabase.from('vehicle_eu_refresh').insert({
+          asset_id:      task.assetId,
+          user_id:       user.id,
+          regnr:         parentAsset.regnr,
+          refresh_after: refreshAfter.toISOString(),
+        })
+      }
+    }
+
     fetchAll()
   }
 

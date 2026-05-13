@@ -3,7 +3,11 @@
 // (2 letters + 4–5 digits; MC/ATV use 4 digits, cars use 5), a debounced
 // lookup fires against the lookup-vehicle Supabase Edge Function, which
 // proxies the Statens vegvesen API and returns pre-filled name, category,
-// and a description block of technical specs.
+// description, regnr, and eu_date.
+//
+// On new asset creation: if the lookup returned an eu_date, an EU-kontroll
+// maintenance task is automatically created with that date as fixed_due_date.
+//
 // Cover-image upload requires a real asset id for the storage path. If the
 // asset hasn't been saved yet when the user picks an image, a draft row is
 // inserted first to obtain an id, and that id is reused when the form is
@@ -27,19 +31,24 @@ const CATEGORIES = [
   'Elektriske og manuelle verktøy', 'Bensindrevne verktøy', 'Annet',
 ]
 
+const VEHICLE_CATEGORIES = ['Bil', 'MC/ATV', 'Bobil', 'Campingvogn', 'Tilhenger']
+
 // Norwegian plate: 2 letters + 4–5 digits (MC/ATV use 4, cars use 5), optional space
 const REGNR_RE = /^[A-Za-z]{2}\s?\d{4,5}$/
 
 export default function AssetForm({ asset, onClose, onSaved }) {
   const isEdit = !!asset
   const [form, setForm] = useState({
-    name: asset?.name ?? '',
-    category: asset?.category ?? '',
-    description: asset?.description ?? '',
+    name:         asset?.name         ?? '',
+    category:     asset?.category     ?? '',
+    description:  asset?.description  ?? '',
     purchased_at: asset?.purchased_at ?? '',
-    image_url: asset?.image_url ?? '',
-    postal_code: asset?.postal_code ?? '',
+    image_url:    asset?.image_url    ?? '',
+    postal_code:  asset?.postal_code  ?? '',
+    regnr:        asset?.regnr        ?? '',
   })
+  const [euDate, setEuDate] = useState(null)   // ISO date from Vegvesenet lookup
+
   // Load user's default postal code when creating a new asset
   useEffect(() => {
     if (isEdit) return
@@ -68,6 +77,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
   function handleNameChange(e) {
     const val = e.target.value
     setField('name', val)
+    setEuDate(null)
 
     clearTimeout(debounceRef.current)
     if (REGNR_RE.test(val.trim())) {
@@ -93,7 +103,9 @@ export default function AssetForm({ asset, onClose, onSaved }) {
         name:        data.name        || f.name,
         category:    data.category    || f.category,
         description: data.description || f.description,
+        regnr:       data.regnr       || f.regnr,
       }))
+      setEuDate(data.eu_date || null)
       setLookupState('found')
     } catch {
       setLookupState('error')
@@ -114,7 +126,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
       if (!id) {
         const { data, error: insertErr } = await supabase
           .from('assets')
-          .insert({ name: form.name || 'Ny eiendel', category: form.category || null, postal_code: form.postal_code || null })
+          .insert({ name: form.name || 'Ny eiendel', category: form.category || null, postal_code: form.postal_code || null, regnr: form.regnr || null })
           .select()
           .single()
         if (insertErr) throw insertErr
@@ -147,22 +159,41 @@ export default function AssetForm({ asset, onClose, onSaved }) {
     setError(null)
     try {
       const payload = {
-        name:        form.name.trim(),
-        category:    form.category || null,
-        description: form.description || null,
+        name:         form.name.trim(),
+        category:     form.category    || null,
+        description:  form.description || null,
         purchased_at: form.purchased_at || null,
-        image_url:   form.image_url || null,
-        postal_code: form.postal_code || null,
+        image_url:    form.image_url   || null,
+        postal_code:  form.postal_code || null,
+        regnr:        form.regnr       || null,
       }
       if (!payload.name) throw new Error('Navn er påkrevd')
 
-      if (isEdit) {
+      let savedId
+
+      if (asset?.id) {
+        // Update — either editing an existing asset or a draft was already created
         const { error } = await supabase.from('assets').update(payload).eq('id', asset.id)
         if (error) throw error
+        savedId = asset.id
       } else {
-        const { error } = await supabase.from('assets').insert(payload)
+        // New asset — insert and capture id
+        const { data, error } = await supabase.from('assets').insert(payload).select('id').single()
         if (error) throw error
+        savedId = data.id
       }
+
+      // Auto-create EU-kontroll task for new vehicles with a known EU date
+      if (!isEdit && euDate && savedId && VEHICLE_CATEGORIES.includes(payload.category)) {
+        await supabase.from('tasks').insert({
+          asset_id:       savedId,
+          title:          'EU-kontroll',
+          fixed_due_date: euDate,
+          description:    'Forfallsdato hentet fra Statens vegvesen.',
+          priority:       1, // high
+        })
+      }
+
       onSaved?.()
       onClose?.()
     } catch (e) {
@@ -204,6 +235,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
         {lookupState === 'found' && (
           <p style={{ margin: '4px 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-success)' }}>
             Kjøretøydata hentet fra Statens vegvesen
+            {euDate && ` · EU-kontroll opprettes automatisk (${euDate})`}
           </p>
         )}
       </div>

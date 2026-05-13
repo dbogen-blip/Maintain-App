@@ -1,21 +1,14 @@
 // Supabase Edge Function: lookup-vehicle
 // Proxies the Statens vegvesen (Norwegian vehicle registry) kjøretøydata API.
-// A server-side proxy is required because the SVV API does not send CORS headers,
-// so the browser cannot call it directly.
-// Called from the frontend with ?regnr=AB12345.
-// Maps Norwegian technical vehicle type codes to app categories:
-//   M / N  → Bil (passenger car / light commercial)
-//   L      → MC/ATV
-//   O      → Tilhenger (trailer)
-//   SA karosseri → Bobil (motorhome — takes precedence over type code)
-// Returns { name, category, description, regnr } where description is a
-// formatted block of technical specs (make, model, year, fuel, weight, etc.).
+// Returns { name, category, description, regnr, eu_date } where:
+//   - description for Bil: only merke, modell, årsmodell, drivstoff
+//   - description for other vehicles: full technical specs (no EU date — it becomes a task)
+//   - eu_date: ISO date string for EU-kontroll deadline, or null
 
 const SVV_KEY = Deno.env.get('SVV_API_KEY') ?? '73af5e12-c5fa-4ba3-a008-feb58993238a'
 const SVV_URL = 'https://www.vegvesen.no/ws/no/vegvesen/kjoretoy/felles/datautlevering/enkeltoppslag/kjoretoydata'
 
 Deno.serve(async (req) => {
-  // CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: cors() })
   }
@@ -34,71 +27,85 @@ Deno.serve(async (req) => {
   const kd = raw?.kjoretoydataListe?.[0]
   if (!kd) return json({ error: 'Ingen data' }, 404)
 
-  const teknisk = kd.godkjenning?.tekniskGodkjenning?.tekniskeData
+  const teknisk  = kd.godkjenning?.tekniskGodkjenning?.tekniskeData
   const generelt = teknisk?.generelt
   const klasse   = kd.godkjenning?.tekniskGodkjenning?.kjoretoyklassifisering
 
-  const merke   = generelt?.merke?.[0]?.merke ?? ''
-  const modell  = generelt?.handelsbetegnelse?.[0] ?? ''
-  const typeKode = klasse?.tekniskKode?.kodeVerdi ?? ''     // M1, N1, L3, O1, ...
-  const karosseri = teknisk?.karosseriOgLasteplan?.karosseritype?.kodeVerdi ?? '' // SA=bobil
-  const arskode  = kd.forstegangsregistrering?.registrertForstegangNorgeDato?.slice(0, 4) ?? ''
+  const merke     = generelt?.merke?.[0]?.merke ?? ''
+  const modell    = generelt?.handelsbetegnelse?.[0] ?? ''
+  const typeKode  = klasse?.tekniskKode?.kodeVerdi ?? ''
+  const karosseri = teknisk?.karosseriOgLasteplan?.karosseritype?.kodeVerdi ?? ''
+  const arskode   = kd.forstegangsregistrering?.registrertForstegangNorgeDato?.slice(0, 4) ?? ''
 
-  // spesialkarosseriTekst from ovrigeTekniskeData (e.g. "Campingvogner")
   const ovrige: any[] = teknisk?.ovrigeTekniskeData ?? []
   const spesial = ovrige.find((o: any) => o.datafeltNavn === 'spesialkarosseriTekst')?.datafeltVerdi?.toLowerCase() ?? ''
 
-  // Kategori-mapping
   let category = 'Bil'
-  if (spesial.includes('camping'))   category = 'Campingvogn'
-  else if (karosseri === 'SA')       category = 'Bobil'
-  else if (/^M/.test(typeKode))      category = 'Bil'
-  else if (/^N/.test(typeKode))      category = 'Bil'
-  else if (/^L/.test(typeKode))      category = 'MC/ATV'
-  else if (/^O/.test(typeKode))      category = 'Tilhenger'
+  if (spesial.includes('camping'))  category = 'Campingvogn'
+  else if (karosseri === 'SA')      category = 'Bobil'
+  else if (/^M/.test(typeKode))     category = 'Bil'
+  else if (/^N/.test(typeKode))     category = 'Bil'
+  else if (/^L/.test(typeKode))     category = 'MC/ATV'
+  else if (/^O/.test(typeKode))     category = 'Tilhenger'
 
-  // Tekniske data til beskrivelse
-  const dim   = teknisk?.dimensjoner
-  const vekt  = teknisk?.vekter
-  const motor = teknisk?.motorOgDrivverk?.motor?.[0]
-  const drift = motor?.drivstoff?.[0]
-  const dekkF = teknisk?.dekkOgFelg?.akselDekkOgFelgKombinasjon?.[0]?.akselDekkOgFelg?.find((a: any) => a.akselId === 1)
-  const farge  = teknisk?.karosseriOgLasteplan?.rFarge?.[0]?.kodeNavn ?? ''
-  const seter  = teknisk?.persontall?.sitteplasserTotalt
+  const motor         = teknisk?.motorOgDrivverk?.motor?.[0]
+  const drift         = motor?.drivstoff?.[0]
   const drivstoffNavn = drift?.drivstoffKode?.kodeNavn ?? ''
-  const effekt = drift?.maksNettoEffekt ? `${drift.maksNettoEffekt} kW` : ''
-  const eu     = kd.periodiskKjoretoyKontroll?.kontrollfrist ?? ''
-  const vin    = kd.kjoretoyId?.understellsnummer ?? ''
-  const maks   = teknisk?.motorOgDrivverk?.maksimumHastighet?.[0]
-  const rekkevidde = teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.rekkeviddeKm
 
-  const lines: string[] = [
-    `Merke: ${merke}`,
-    `Modell: ${modell}`,
-    arskode ? `Årsmodell: ${arskode}` : '',
-    farge   ? `Farge: ${farge}` : '',
-    drivstoffNavn ? `Drivstoff: ${drivstoffNavn}` : '',
-    effekt  ? `Motoreffekt: ${effekt}` : '',
-    rekkevidde ? `Rekkevidde: ${rekkevidde} km` : '',
-    maks    ? `Maks hastighet: ${maks} km/t` : '',
-    dim?.lengde ? `Lengde: ${dim.lengde} mm` : '',
-    dim?.bredde ? `Bredde: ${dim.bredde} mm` : '',
-    dim?.hoyde  ? `Høyde: ${dim.hoyde} mm` : '',
-    vekt?.egenvekt         ? `Egenvekt: ${vekt.egenvekt} kg` : '',
-    vekt?.tillattTotalvekt ? `Tillatt totalvekt: ${vekt.tillattTotalvekt} kg` : '',
-    vekt?.nyttelast        ? `Nyttelast: ${vekt.nyttelast} kg` : '',
-    vekt?.tillattTilhengervektMedBrems ? `Tilhengervekt (med brems): ${vekt.tillattTilhengervektMedBrems} kg` : '',
-    seter   ? `Sitteplasser: ${seter}` : '',
-    dekkF?.dekkdimensjon ? `Dekk: ${dekkF.dekkdimensjon}` : '',
-    eu      ? `EU-kontroll frist: ${eu}` : '',
-    vin     ? `Understellsnr: ${vin}` : '',
-  ].filter(Boolean)
+  // EU-kontroll date — returned separately, not in description (becomes a task)
+  const eu_date = kd.periodiskKjoretoyKontroll?.kontrollfrist ?? null
+
+  let lines: string[]
+
+  if (category === 'Bil') {
+    // Slim description for cars
+    lines = [
+      `Merke: ${merke}`,
+      `Modell: ${modell}`,
+      arskode       ? `Årsmodell: ${arskode}` : '',
+      drivstoffNavn ? `Drivstoff: ${drivstoffNavn}` : '',
+    ].filter(Boolean)
+  } else {
+    // Full technical specs for other vehicles (no EU date — it becomes a task)
+    const dim    = teknisk?.dimensjoner
+    const vekt   = teknisk?.vekter
+    const farge  = teknisk?.karosseriOgLasteplan?.rFarge?.[0]?.kodeNavn ?? ''
+    const seter  = teknisk?.persontall?.sitteplasserTotalt
+    const effekt = drift?.maksNettoEffekt ? `${drift.maksNettoEffekt} kW` : ''
+    const vin    = kd.kjoretoyId?.understellsnummer ?? ''
+    const maks   = teknisk?.motorOgDrivverk?.maksimumHastighet?.[0]
+    const dekkF  = teknisk?.dekkOgFelg?.akselDekkOgFelgKombinasjon?.[0]?.akselDekkOgFelg?.find((a: any) => a.akselId === 1)
+    const rekkevidde = teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.wltpKjoretoyspesifikk?.rekkeviddeKmBlandetkjoring
+      ?? teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.rekkeviddeKm
+
+    lines = [
+      `Merke: ${merke}`,
+      `Modell: ${modell}`,
+      arskode       ? `Årsmodell: ${arskode}` : '',
+      farge         ? `Farge: ${farge}` : '',
+      drivstoffNavn ? `Drivstoff: ${drivstoffNavn}` : '',
+      effekt        ? `Motoreffekt: ${effekt}` : '',
+      rekkevidde    ? `Rekkevidde: ${rekkevidde} km` : '',
+      maks          ? `Maks hastighet: ${maks} km/t` : '',
+      dim?.lengde   ? `Lengde: ${dim.lengde} mm` : '',
+      dim?.bredde   ? `Bredde: ${dim.bredde} mm` : '',
+      dim?.hoyde    ? `Høyde: ${dim.hoyde} mm` : '',
+      vekt?.egenvekt         ? `Egenvekt: ${vekt.egenvekt} kg` : '',
+      vekt?.tillattTotalvekt ? `Tillatt totalvekt: ${vekt.tillattTotalvekt} kg` : '',
+      vekt?.nyttelast        ? `Nyttelast: ${vekt.nyttelast} kg` : '',
+      vekt?.tillattTilhengervektMedBrems ? `Tilhengervekt (med brems): ${vekt.tillattTilhengervektMedBrems} kg` : '',
+      seter                  ? `Sitteplasser: ${seter}` : '',
+      dekkF?.dekkdimensjon   ? `Dekk: ${dekkF.dekkdimensjon}` : '',
+      vin           ? `Understellsnr: ${vin}` : '',
+    ].filter(Boolean)
+  }
 
   return json({
     name:        `${merke} ${modell}`.trim(),
     category,
     description: lines.join('\n'),
     regnr:       kd.kjoretoyId?.kjennemerke ?? regnr,
+    eu_date:     eu_date || null,
   })
 })
 

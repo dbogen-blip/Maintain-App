@@ -161,6 +161,34 @@ export default function AssetDetail() {
     setLoading(false)
   }
 
+  async function handleLogSaved(task) {
+    load()
+    const isEu = task?.title?.toLowerCase().includes('eu-kontroll')
+    if (isEu && asset?.regnr) {
+      // Schedule a Vegvesenet refresh 6 months from now
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const refreshAfter = new Date()
+        refreshAfter.setMonth(refreshAfter.getMonth() + 6)
+        // Delete any existing pending job for this asset (partial unique index),
+        // then insert new one
+        await supabase.from('vehicle_eu_refresh')
+          .delete()
+          .eq('asset_id', assetId)
+          .is('processed_at', null)
+        await supabase.from('vehicle_eu_refresh').insert({
+          asset_id:     assetId,
+          user_id:      user.id,
+          regnr:        asset.regnr,
+          refresh_after: refreshAfter.toISOString(),
+        })
+      }
+      setToast({
+        message: 'EU-kontroll registrert! Ny forfallsdato hentes automatisk fra Statens vegvesen om 6 måneder.',
+      })
+    }
+  }
+
   async function deleteTask(task) {
     const now = new Date().toISOString()
     await supabase.from('tasks').update({ deleted_at: now }).eq('id', task.id)
@@ -423,7 +451,7 @@ export default function AssetDetail() {
           assetId={assetId}
           assetCategory={asset?.category}
           onClose={() => setLogTask(null)}
-          onSaved={load}
+          onSaved={() => handleLogSaved(logTask)}
         />
       )}
       {showHousePicker && asset?.category === 'Hus' && (
