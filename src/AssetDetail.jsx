@@ -335,6 +335,7 @@ export default function AssetDetail() {
               <div className="row" style={{ marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {asset.category && <Badge>{asset.category}</Badge>}
                 {asset.purchased_at && <Badge variant="neutral">Kjøpt {asset.purchased_at}</Badge>}
+                {asset.postal_code && <Badge variant="neutral"><Icon name="map-pin" size={11} /> {asset.postal_code}</Badge>}
               </div>
             </div>
             <div className="row asset-hero-actions" style={{ flexWrap: 'nowrap', flexShrink: 0 }}>

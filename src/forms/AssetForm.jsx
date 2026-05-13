@@ -8,7 +8,7 @@
 // asset hasn't been saved yet when the user picks an image, a draft row is
 // inserted first to obtain an id, and that id is reused when the form is
 // saved — avoiding a second INSERT.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { uploadAssetCover, deleteFile } from '../storage'
 import Modal from '../components/Modal'
@@ -16,6 +16,7 @@ import { Input, Textarea, Select } from '../components/Input'
 import Button from '../components/Button'
 import Icon from '../components/Icon'
 import FileUpload from '../components/FileUpload'
+import PostalCodeInput from '../components/PostalCodeInput'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -37,7 +38,26 @@ export default function AssetForm({ asset, onClose, onSaved }) {
     description: asset?.description ?? '',
     purchased_at: asset?.purchased_at ?? '',
     image_url: asset?.image_url ?? '',
+    postal_code: asset?.postal_code ?? '',
   })
+  // Load user's default postal code when creating a new asset
+  useEffect(() => {
+    if (isEdit) return
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('notification_preferences')
+        .select('default_postal_code')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.default_postal_code) {
+            setField('postal_code', data.default_postal_code)
+          }
+        })
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [lookupState, setLookupState] = useState(null) // null | 'loading' | 'found' | 'error'
@@ -94,7 +114,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
       if (!id) {
         const { data, error: insertErr } = await supabase
           .from('assets')
-          .insert({ name: form.name || 'Ny eiendel', category: form.category || null })
+          .insert({ name: form.name || 'Ny eiendel', category: form.category || null, postal_code: form.postal_code || null })
           .select()
           .single()
         if (insertErr) throw insertErr
@@ -132,6 +152,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
         description: form.description || null,
         purchased_at: form.purchased_at || null,
         image_url:   form.image_url || null,
+        postal_code: form.postal_code || null,
       }
       if (!payload.name) throw new Error('Navn er påkrevd')
 
@@ -209,6 +230,13 @@ export default function AssetForm({ asset, onClose, onSaved }) {
         type="date"
         value={form.purchased_at}
         onChange={e => setField('purchased_at', e.target.value)}
+      />
+
+      <PostalCodeInput
+        label="Postnummer"
+        value={form.postal_code}
+        onChange={(code) => setField('postal_code', code)}
+        hint="Brukes til å finne lokale tjenester nær eiendelen"
       />
 
       <div className="field">

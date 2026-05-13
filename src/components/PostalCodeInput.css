@@ -1,0 +1,46 @@
+.postal-code-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.postal-code-input {
+  width: 7ch;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  transition: border-color 0.15s;
+}
+
+.postal-code-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+}
+
+.postal-code-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.postal-code-place {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.postal-code-place--error {
+  color: var(--color-danger-600);
+}
+
+.field-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}

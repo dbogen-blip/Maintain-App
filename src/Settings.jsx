@@ -14,6 +14,7 @@ import Icon from './components/Icon'
 import { Input, Checkbox } from './components/Input'
 import ConfirmDialog from './components/ConfirmDialog'
 import Toast from './components/Toast'
+import PostalCodeInput from './components/PostalCodeInput'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
@@ -207,6 +208,7 @@ export default function Settings() {
         lead_time_days: prefs.lead_time_days,
         timezone: prefs.timezone,
         digest_frequency: prefs.digest_frequency,
+        default_postal_code: prefs.default_postal_code || null,
       })
       .eq('user_id', prefs.user_id)
     setSaving(false)
@@ -340,6 +342,23 @@ export default function Settings() {
             {passwordSaved && <span className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>Passord oppdatert ✓</span>}
           </div>
         </form>
+      </Card>
+
+      {/* Standard postnummer */}
+      <Card padding={5} style={{ marginBottom: 'var(--space-4)' }}>
+        <h2 style={{ marginBottom: 'var(--space-1)' }}>Standard postnummer</h2>
+        <p className="muted" style={{ fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
+          Nye eiendeler får dette postnummeret automatisk. Kan overstyres per eiendel.
+        </p>
+        <PostalCodeInput
+          value={prefs.default_postal_code ?? ''}
+          onChange={(code) => setPrefs({ ...prefs, default_postal_code: code || null })}
+          hint="Brukes til å foreslå lokale tjenester som verksted og EU-kontroll"
+        />
+        <div className="row" style={{ marginTop: 'var(--space-4)' }}>
+          <Button onClick={save} loading={saving} icon="check">Lagre</Button>
+          {savedAt && <span className="muted" style={{ fontSize: 'var(--font-size-sm)' }}>Lagret {savedAt.toLocaleTimeString('nb-NO')}</span>}
+        </div>
       </Card>
 
       <Card padding={5} style={{ marginBottom: 'var(--space-4)' }}>
