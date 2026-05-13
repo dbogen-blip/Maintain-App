@@ -65,9 +65,11 @@ export default function Home() {
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [assets, setAssets]         = useState([])
   const [doneCount, setDoneCount]   = useState(0)
+  const [doneAssetIds, setDoneAssetIds] = useState(new Set())
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState('')
   const [filter, setFilter]         = useState('')
+  const [statFilter, setStatFilter] = useState(null) // null | 'overdue' | 'soon' | 'done'
   const [editing, setEditing]       = useState(null)
   const [markingId, setMarkingId]   = useState(null)
 
@@ -79,7 +81,8 @@ export default function Home() {
     start.setDate(1)
     start.setHours(0, 0, 0, 0)
 
-    const [{ data }, { count }, { data: kmRows }] = await Promise.all([
+    const startStr = start.toISOString().slice(0, 10)
+    const [{ data }, { count }, { data: kmRows }, { data: doneRows }] = await Promise.all([
       supabase
         .from('assets')
         .select('id, name, category, description, image_url, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
@@ -88,13 +91,18 @@ export default function Home() {
       supabase
         .from('maintenance_logs')
         .select('id', { count: 'exact', head: true })
-        .gte('performed_on', start.toISOString().slice(0, 10)),
+        .gte('performed_on', startStr),
       // Latest km reading per asset (used to evaluate km-based task urgency)
       supabase
         .from('maintenance_logs')
         .select('asset_id, km_reading, performed_on')
         .not('km_reading', 'is', null)
         .order('performed_on', { ascending: false }),
+      // Asset IDs with at least one log this month (for stat filter)
+      supabase
+        .from('maintenance_logs')
+        .select('asset_id')
+        .gte('performed_on', startStr),
     ])
 
     // Build map: assetId → highest km_reading seen (most recent odometer value)
@@ -105,6 +113,7 @@ export default function Home() {
 
     setAssets((data ?? []).map(a => ({ ...a, currentKm: latestKm.get(a.id) ?? null })))
     setDoneCount(count ?? 0)
+    setDoneAssetIds(new Set((doneRows ?? []).map(r => r.asset_id)))
     setLoading(false)
   }
 
@@ -180,6 +189,30 @@ export default function Home() {
     const s = search.trim().toLowerCase()
     return assets.filter(a => {
       if (filter && a.category !== filter) return false
+
+      // Stat tile filter
+      if (statFilter === 'overdue') {
+        const hasOverdue = (a.tasks ?? []).some(t => {
+          if (t.interval_type === 'km') return t.next_due_km != null && a.currentKm != null && t.next_due_km - a.currentKm <= 0
+          const d = daysUntil(t.fixed_due_date ?? t.next_due)
+          return d !== null && d < 0
+        })
+        if (!hasOverdue) return false
+      } else if (statFilter === 'soon') {
+        const hasSoon = (a.tasks ?? []).some(t => {
+          if (t.interval_type === 'km') {
+            if (t.next_due_km == null || a.currentKm == null) return false
+            const diff = t.next_due_km - a.currentKm
+            return diff > 0 && diff <= 500
+          }
+          const d = daysUntil(t.fixed_due_date ?? t.next_due)
+          return d !== null && d >= 0 && d <= 7
+        })
+        if (!hasSoon) return false
+      } else if (statFilter === 'done') {
+        if (!doneAssetIds.has(a.id)) return false
+      }
+
       if (!s) return true
       return (
         a.name.toLowerCase().includes(s) ||
@@ -187,7 +220,7 @@ export default function Home() {
         (a.category || '').toLowerCase().includes(s)
       )
     })
-  }, [assets, search, filter])
+  }, [assets, search, filter, statFilter, doneAssetIds])
 
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -223,19 +256,43 @@ export default function Home() {
 
         {/* ── Stats ── */}
         <div className="home-stats">
-          <div className="stat-card">
+          <div
+            className={`stat-card${statFilter === null ? ' stat-card--active' : ''}`}
+            onClick={() => setStatFilter(null)}
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && setStatFilter(null)}
+            title="Vis alle eiendeler"
+          >
             <span className="stat-value">{stats.total}</span>
             <span className="stat-label">Eiendeler</span>
           </div>
-          <div className={`stat-card${stats.overdue > 0 ? ' stat-card--danger' : ''}`}>
+          <div
+            className={`stat-card${stats.overdue > 0 ? ' stat-card--danger' : ''}${statFilter === 'overdue' ? ' stat-card--active' : ''}`}
+            onClick={() => setStatFilter(f => f === 'overdue' ? null : 'overdue')}
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && setStatFilter(f => f === 'overdue' ? null : 'overdue')}
+            title="Vis eiendeler med forfalte oppgaver"
+          >
             <span className="stat-value">{stats.overdue}</span>
             <span className="stat-label">Forfalt</span>
           </div>
-          <div className={`stat-card${stats.soon > 0 ? ' stat-card--warning' : ''}`}>
+          <div
+            className={`stat-card${stats.soon > 0 ? ' stat-card--warning' : ''}${statFilter === 'soon' ? ' stat-card--active' : ''}`}
+            onClick={() => setStatFilter(f => f === 'soon' ? null : 'soon')}
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && setStatFilter(f => f === 'soon' ? null : 'soon')}
+            title="Vis eiendeler med oppgaver som forfaller snart"
+          >
             <span className="stat-value">{stats.soon}</span>
             <span className="stat-label">Forfaller snart</span>
           </div>
-          <div className={`stat-card${doneCount > 0 ? ' stat-card--success' : ''}`}>
+          <div
+            className={`stat-card${doneCount > 0 ? ' stat-card--success' : ''}${statFilter === 'done' ? ' stat-card--active' : ''}`}
+            onClick={() => setStatFilter(f => f === 'done' ? null : 'done')}
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && setStatFilter(f => f === 'done' ? null : 'done')}
+            title="Vis eiendeler med fullførte oppgaver denne måneden"
+          >
             <span className="stat-value">{doneCount}</span>
             <span className="stat-label">Fullført denne måneden</span>
           </div>
@@ -299,7 +356,12 @@ export default function Home() {
         {/* ── Mine eiendeler ── */}
         <section className="home-section">
           <div className="home-section-header">
-            <h2>Mine eiendeler</h2>
+            <h2>
+              {statFilter === 'overdue' ? 'Forfalte eiendeler'
+                : statFilter === 'soon' ? 'Forfaller snart'
+                : statFilter === 'done' ? 'Fullført denne måneden'
+                : 'Mine eiendeler'}
+            </h2>
             <Button icon="plus" onClick={() => setEditing({})}>Ny eiendel</Button>
           </div>
 
