@@ -67,14 +67,9 @@ Deno.serve(async (req) => {
     ].filter(Boolean)
   } else {
     // Full technical specs for other vehicles (no EU date — it becomes a task)
-    const dim    = teknisk?.dimensjoner
     const vekt   = teknisk?.vekter
     const farge  = teknisk?.karosseriOgLasteplan?.rFarge?.[0]?.kodeNavn ?? ''
-    const seter  = teknisk?.persontall?.sitteplasserTotalt
     const effekt = drift?.maksNettoEffekt ? `${drift.maksNettoEffekt} kW` : ''
-    const vin    = kd.kjoretoyId?.understellsnummer ?? ''
-    const maks   = teknisk?.motorOgDrivverk?.maksimumHastighet?.[0]
-    const dekkF  = teknisk?.dekkOgFelg?.akselDekkOgFelgKombinasjon?.[0]?.akselDekkOgFelg?.find((a: any) => a.akselId === 1)
     const rekkevidde = teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.wltpKjoretoyspesifikk?.rekkeviddeKmBlandetkjoring
       ?? teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.rekkeviddeKm
 
@@ -86,17 +81,10 @@ Deno.serve(async (req) => {
       drivstoffNavn ? `Drivstoff: ${drivstoffNavn}` : '',
       effekt        ? `Motoreffekt: ${effekt}` : '',
       rekkevidde    ? `Rekkevidde: ${rekkevidde} km` : '',
-      maks          ? `Maks hastighet: ${maks} km/t` : '',
-      dim?.lengde   ? `Lengde: ${dim.lengde} mm` : '',
-      dim?.bredde   ? `Bredde: ${dim.bredde} mm` : '',
-      dim?.hoyde    ? `Høyde: ${dim.hoyde} mm` : '',
       vekt?.egenvekt         ? `Egenvekt: ${vekt.egenvekt} kg` : '',
       vekt?.tillattTotalvekt ? `Tillatt totalvekt: ${vekt.tillattTotalvekt} kg` : '',
       vekt?.nyttelast        ? `Nyttelast: ${vekt.nyttelast} kg` : '',
       vekt?.tillattTilhengervektMedBrems ? `Tilhengervekt (med brems): ${vekt.tillattTilhengervektMedBrems} kg` : '',
-      seter                  ? `Sitteplasser: ${seter}` : '',
-      dekkF?.dekkdimensjon   ? `Dekk: ${dekkF.dekkdimensjon}` : '',
-      vin           ? `Understellsnr: ${vin}` : '',
     ].filter(Boolean)
   }
 
