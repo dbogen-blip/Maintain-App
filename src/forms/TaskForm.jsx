@@ -41,6 +41,8 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
     notes:          task?.notes         ?? '',
   })
   const [fixedDates, setFixedDates] = useState(task?.fixed_due_date ? [task.fixed_due_date] : [''])
+  // null = one-time, number = repeats every N years after completion
+  const [repeatYears, setRepeatYears] = useState(task?.repeat_after_years ?? null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [attachments, setAttachments] = useState([])
@@ -171,15 +173,27 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
         // multi-fixed: create one row per date
         const dates = fixedDates.filter(d => d)
         if (!dates.length) throw new Error('Legg til minst én dato')
+
+        const ry = repeatYears != null ? Number(repeatYears) : null
+        if (ry !== null && (!Number.isFinite(ry) || ry < 1 || ry > 60))
+          throw new Error('Gjentakelse må være mellom 1 og 60 år')
+
         const rows = dates.map(d => ({
           ...base,
-          fixed_due_date: d,
-          interval_days:  null,
-          last_done:      null,
+          fixed_due_date:     d,
+          interval_days:      null,
+          last_done:          null,
+          repeat_after_years: ry,
         }))
         if (taskId) {
           // When editing an existing fixed task, apply only the first date to avoid creating extra rows
-          const { error } = await supabase.from('tasks').update({ ...base, fixed_due_date: dates[0], interval_days: null, last_done: null }).eq('id', taskId)
+          const { error } = await supabase.from('tasks').update({
+            ...base,
+            fixed_due_date:     dates[0],
+            interval_days:      null,
+            last_done:          null,
+            repeat_after_years: ry,
+          }).eq('id', taskId)
           if (error) throw error
         } else {
           const { error } = await supabase.from('tasks').insert(rows)
@@ -310,7 +324,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
         </>
       ) : (
         <div className="field">
-          <label>Datoer (opptil 6)</label>
+          <label>Datoer (opptil 10)</label>
           {fixedDates.map((d, i) => (
             <div key={i} style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
               <div style={{ flex: 1 }}>
@@ -341,7 +355,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
               )}
             </div>
           ))}
-          {fixedDates.length < 6 && (
+          {fixedDates.length < 10 && (
             <button
               type="button"
               className="chip"
@@ -351,6 +365,64 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
               <Icon name="plus" size={14} /> Legg til dato
             </button>
           )}
+
+          {/* Recurrence toggle */}
+          <div style={{
+            marginTop: 'var(--space-4)',
+            padding: 'var(--space-3) var(--space-4)',
+            background: 'var(--color-surface-alt)',
+            borderRadius: 'var(--radius-lg)',
+          }}>
+            <label style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', display: 'block', marginBottom: 'var(--space-3)' }}>
+              Gjentakelse
+            </label>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className={`chip${repeatYears === null ? ' chip-active' : ''}`}
+                onClick={() => setRepeatYears(null)}
+              >
+                Engangshendelse
+              </button>
+              <button
+                type="button"
+                className={`chip${repeatYears !== null ? ' chip-active' : ''}`}
+                onClick={() => setRepeatYears(repeatYears ?? 1)}
+              >
+                Gjentar seg
+              </button>
+            </div>
+
+            {repeatYears !== null && (
+              <div style={{ marginTop: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>Neste oppgave opprettes</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={repeatYears}
+                  onChange={e => {
+                    const v = Math.max(1, Math.min(60, parseInt(e.target.value, 10) || 1))
+                    setRepeatYears(v)
+                  }}
+                  style={{
+                    width: 64,
+                    padding: '6px 10px',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--font-size-sm)',
+                    background: 'var(--color-surface)',
+                    color: 'var(--color-text)',
+                    fontFamily: 'inherit',
+                    textAlign: 'center',
+                  }}
+                />
+                <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                  år etter at oppgaven er utført
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

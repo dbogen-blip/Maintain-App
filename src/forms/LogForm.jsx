@@ -129,6 +129,24 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
           .eq('id', task.id)
       }
 
+      // For recurring fixed-date tasks: create next occurrence X years after
+      // the date the task was performed.
+      if (task.fixed_due_date && task.repeat_after_years) {
+        const performed = new Date(payload.performed_on)
+        const nextDue = new Date(performed)
+        nextDue.setFullYear(nextDue.getFullYear() + task.repeat_after_years)
+        const nextDueStr = nextDue.toISOString().slice(0, 10)
+        await supabase.from('tasks').insert({
+          asset_id:           task.asset_id,
+          title:              task.title,
+          fixed_due_date:     nextDueStr,
+          repeat_after_years: task.repeat_after_years,
+          description:        task.description ?? null,
+          notes:              task.notes       ?? null,
+          priority:           task.priority    ?? 2,
+        })
+      }
+
       onSaved?.()
       onClose?.()
     } catch (e) {
