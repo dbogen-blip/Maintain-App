@@ -105,7 +105,7 @@ function daysUntil(dateStr) {
 function assetStatus(tasks, currentKm) {
   // Completed fixed-date tasks are not active concerns
   const active = tasks.filter(t => !(t.fixed_due_date && t.last_done))
-  if (active.length === 0) return { level: 'none', label: 'Ingen oppgaver' }
+  if (active.length === 0) return { level: 'none', label: 'N/A' }
 
   let worst = Infinity // lower = more urgent
   for (const t of active) {
@@ -483,8 +483,10 @@ export default function Home() {
                         <span className="ac-label">Neste oppgave</span>
                         {next ? (
                           <div className="ac-next-task">
-                            <Icon name="clock" size={13} />
-                            <span className="ac-next-title">{next.title}</span>
+                            <div className="ac-next-title-row">
+                              <Icon name="clock" size={13} />
+                              <span className="ac-next-title">{next.title}</span>
+                            </div>
                             <span className={`ac-next-when${next.kind === 'days' && next.days <= 0 ? ' ac-next-overdue' : ''}`}>
                               {nextWhenText}
                             </span>
@@ -512,7 +514,7 @@ export default function Home() {
                       <div className="ac-stat">
                         <Icon name="check" size={15} />
                         <strong>{doneCount}/{totalCount}</strong>
-                        <span>utfort</span>
+                        <span>utført</span>
                       </div>
                       <div className="ac-stat">
                         <Icon name="calendar" size={15} />

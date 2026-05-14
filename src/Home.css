@@ -297,24 +297,36 @@
 .ac-next { flex: 1; min-width: 0; }
 .ac-next-task {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* First line: icon + title */
+.ac-next-title-row {
+  display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  flex-wrap: wrap;
+  min-width: 0;
 }
 .ac-next-title {
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  /* no max-width — uses all space up to status column */
 }
-.ac-next-when { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+/* Second line: "om X dager" */
+.ac-next-when {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  padding-left: 18px; /* aligns under title, past the icon */
+}
 .ac-next-overdue { color: var(--color-danger-600) !important; font-weight: var(--font-weight-medium); }
 .ac-next-empty { font-size: var(--font-size-sm); color: var(--color-text-soft); }
 
-.ac-status-col { flex-shrink: 0; text-align: right; }
+/* Status column: fixed width so title gets max remaining space */
+.ac-status-col { flex-shrink: 0; text-align: right; width: 96px; }
 
 /* Status pill with colored dot */
 .ac-status-pill {
