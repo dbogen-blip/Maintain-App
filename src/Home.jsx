@@ -143,7 +143,7 @@ export default function Home() {
       const [{ data, error: aErr }, { data: kmRows, error: kErr }] = await Promise.all([
         supabase
           .from('assets')
-          .select('id, name, category, description, image_url, regnr, tasks(id, asset_id, title, next_due, fixed_due_date, interval_type, next_due_km, repeat_after_years)')
+          .select('id, name, category, description, image_url, regnr, tasks(id, asset_id, title, next_due, fixed_due_date, interval_type, next_due_km, repeat_after_years, last_done)')
           .is('deleted_at', null)
           .order('name'),
         // Latest km reading per asset (used to evaluate km-based task urgency).
@@ -215,6 +215,8 @@ export default function Home() {
             })
           }
         } else {
+          // Skip fixed-date tasks that have already been completed (last_done is set)
+          if (t.fixed_due_date && t.last_done) continue
           const due = t.fixed_due_date ?? t.next_due
           const d   = daysUntil(due)
           if (d !== null && d <= 7) {

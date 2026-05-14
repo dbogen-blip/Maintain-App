@@ -96,10 +96,16 @@ export default function AssetDetail() {
   }, [tasks])
 
   const taskGroups = useMemo(() => {
-    const overdue = [], soon = [], later = [], unplanned = []
+    const overdue = [], soon = [], later = [], unplanned = [], done = []
     for (const t of tasks) {
+      // A fixed-date task with last_done set has been completed — move it to
+      // the "Utforte" group regardless of whether the due date has passed.
+      if (t.fixed_due_date && t.last_done) {
+        done.push(t)
+        continue
+      }
+
       if (t.interval_type === 'km') {
-        // km tasks: bucket by how far past/ahead of next_due_km
         if (t.next_due_km == null) { unplanned.push(t); continue }
         const diff = currentKm != null ? t.next_due_km - currentKm : null
         if (diff === null)   { unplanned.push(t); continue }
@@ -108,6 +114,7 @@ export default function AssetDetail() {
         else                  later.push(t)
         continue
       }
+
       const due = t.fixed_due_date ?? t.next_due
       const d   = due ? daysUntil(due) : null
       if (d === null)   unplanned.push(t)
@@ -116,12 +123,13 @@ export default function AssetDetail() {
       else              later.push(t)
     }
     return [
-      { id: 'overdue',   label: 'Forfalt',        variant: 'danger',  tasks: overdue   },
-      { id: 'soon',      label: 'Forfaller snart', variant: 'warning', tasks: soon      },
-      { id: 'later',     label: 'Kommende',        variant: 'success', tasks: later     },
-      { id: 'unplanned', label: 'Ikke planlagt',   variant: 'neutral', tasks: unplanned },
+      { id: 'overdue',   label: 'Forfalt',                       variant: 'danger',  tasks: overdue,   isDone: false },
+      { id: 'soon',      label: 'Forfaller snart',               variant: 'warning', tasks: soon,      isDone: false },
+      { id: 'later',     label: 'Kommende',                      variant: 'success', tasks: later,     isDone: false },
+      { id: 'unplanned', label: 'Ikke planlagt',                 variant: 'neutral', tasks: unplanned, isDone: false },
+      { id: 'done',      label: 'Utforte vedlikeholdsoppgaver',  variant: 'neutral', tasks: done,      isDone: true  },
     ].filter(g => g.tasks.length > 0)
-  }, [tasks])
+  }, [tasks, currentKm])
 
   async function load() {
     setLoading(true)
@@ -219,8 +227,10 @@ export default function AssetDetail() {
     navigate('/')
   }
 
-  function renderTask(task) {
-    const badge  = dueBadge(task, currentKm)
+  function renderTask(task, isDone = false) {
+    const badge  = isDone
+      ? { variant: 'success', text: `Utfort ${formatDate(task.last_done)}` }
+      : dueBadge(task, currentKm)
     const isOpen = expanded[task.id]
     return (
       <Card key={task.id} className="task-card" padding={4}>
@@ -238,23 +248,27 @@ export default function AssetDetail() {
               <Badge variant={badge.variant}>{badge.text}</Badge>
             </div>
             <div className="task-meta">
-              {task.interval_type === 'km'
-                ? <span><Icon name="car" size={14} /> Hver {task.interval_km?.toLocaleString('nb-NO')} km</span>
-                : task.fixed_due_date
-                ? <span><Icon name="calendar" size={14} /> Fast dato: {formatDate(task.fixed_due_date)}</span>
-                : task.interval_days
-                ? <span><Icon name="refresh" size={14} /> Hver {task.interval_days} dag</span>
-                : null
-              }
-              {task.interval_type === 'km'
-                ? <span><Icon name="clock" size={14} /> Sist ved: {task.last_done_km != null ? task.last_done_km.toLocaleString('nb-NO') + ' km' : 'aldri'}</span>
-                : !task.fixed_due_date
-                ? <span><Icon name="clock" size={14} /> Sist: {formatDate(task.last_done) ?? 'aldri'}</span>
-                : null
-              }
+              {task.interval_type === 'km' ? (
+                <>
+                  <span><Icon name="car" size={14} /> Hver {task.interval_km?.toLocaleString('nb-NO')} km</span>
+                  <span><Icon name="clock" size={14} /> Sist ved: {task.last_done_km != null ? task.last_done_km.toLocaleString('nb-NO') + ' km' : 'aldri'}</span>
+                </>
+              ) : task.fixed_due_date ? (
+                <>
+                  <span><Icon name="calendar" size={14} /> {isDone ? 'Var planlagt' : 'Fast dato'}: {formatDate(task.fixed_due_date)}</span>
+                  {task.repeat_after_years && (
+                    <span><Icon name="refresh" size={14} /> Gjentar hvert {task.repeat_after_years}. år</span>
+                  )}
+                </>
+              ) : task.interval_days ? (
+                <>
+                  <span><Icon name="calendar" size={14} /> Neste: {formatDate(task.next_due) ?? '—'}</span>
+                  <span><Icon name="refresh" size={14} /> Hver {task.interval_days} dag{task.interval_days !== 1 ? 'er' : ''}</span>
+                </>
+              ) : null}
               {task.priority !== 2 && <span>Prioritet: {priorityLabel(task.priority)}</span>}
               {task.maintenance_logs?.length > 0 && (
-                <span><Icon name="history" size={14} /> {task.maintenance_logs.length} ganger utført</span>
+                <span><Icon name="history" size={14} /> {task.maintenance_logs.length} ganger utfort</span>
               )}
             </div>
           </div>
@@ -335,7 +349,9 @@ export default function AssetDetail() {
             )}
 
             <div className="row" style={{ marginTop: 'var(--space-4)', flexWrap: 'wrap' }}>
-              <Button icon="check" onClick={() => setLogTask(task)}>Marker som utført</Button>
+              {!isDone && (
+                <Button icon="check" onClick={() => setLogTask(task)}>Marker som utført</Button>
+              )}
               <Button variant="secondary" icon="edit" onClick={() => setEditTask(task)}>Rediger</Button>
               <Button variant="danger" icon="trash" size="sm" onClick={() => setConfirmDeleteTask(task)}>Slett</Button>
             </div>
@@ -462,7 +478,7 @@ export default function AssetDetail() {
                 <span className="task-group-label">{group.label}</span>
                 <Badge variant={group.variant}>{group.tasks.length}</Badge>
               </div>
-              {group.tasks.map(task => renderTask(task))}
+              {group.tasks.map(task => renderTask(task, group.isDone))}
             </div>
           ))}
         </div>

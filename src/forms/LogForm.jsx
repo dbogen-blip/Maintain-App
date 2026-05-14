@@ -129,6 +129,14 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
           .eq('id', task.id)
       }
 
+      // For fixed-date tasks: mark last_done so the task moves to the
+      // "Utforte vedlikeholdsoppgaver" section in the UI.
+      if (task.fixed_due_date) {
+        await supabase.from('tasks')
+          .update({ last_done: payload.performed_on })
+          .eq('id', task.id)
+      }
+
       // For recurring fixed-date tasks: create next occurrence X years after
       // the date the task was performed.
       if (task.fixed_due_date && task.repeat_after_years) {
