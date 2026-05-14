@@ -79,6 +79,7 @@ export default function AssetDetail() {
   const [showHousePicker, setShowHousePicker]     = useState(false)
   const [confirmDeleteTask, setConfirmDeleteTask] = useState(null)  // task object | null
   const [confirmDeleteAsset, setConfirmDeleteAsset] = useState(false)
+  const [loadError, setLoadError] = useState(null)
   const [toast, setToast] = useState(null)
 
   useEffect(() => { load() }, [assetId])
@@ -124,41 +125,50 @@ export default function AssetDetail() {
 
   async function load() {
     setLoading(true)
-    const [{ data: a }, { data: t }, tpl] = await Promise.all([
-      supabase.from('assets').select('*').eq('id', assetId).single(),
-      supabase
-        .from('tasks')
-        .select(`
-          *,
-          attachments:task_attachments(id, file_path, file_name, mime_type, size_bytes),
-          maintenance_logs (
-            id, performed_on, notes, cost, km_reading,
-            attachments:maintenance_log_attachments(id, file_path, file_name, mime_type, size_bytes)
-          )
-        `)
-        .eq('asset_id', assetId)
-        .is('deleted_at', null)
-        .order('next_due', { ascending: true, nullsFirst: false }),
-      getTemplateForAsset(assetId),
-    ])
-    setAsset(a)
-    setPublishedTemplate(tpl)
-    const sorted = (t ?? [])
-      .map(task => ({
-        ...task,
-        maintenance_logs: (task.maintenance_logs ?? [])
-          .sort((x, y) => y.performed_on.localeCompare(x.performed_on)),
-      }))
-      .sort((a, b) => {
-        const da = a.fixed_due_date ?? a.next_due
-        const db = b.fixed_due_date ?? b.next_due
-        if (!da && !db) return 0
-        if (!da) return 1
-        if (!db) return -1
-        return da.localeCompare(db)
-      })
-    setTasks(sorted)
-    setLoading(false)
+    setLoadError(null)
+    try {
+      const [{ data: a, error: aErr }, { data: t, error: tErr }, tpl] = await Promise.all([
+        supabase.from('assets').select('*').eq('id', assetId).single(),
+        supabase
+          .from('tasks')
+          .select(`
+            *,
+            attachments:task_attachments(id, file_path, file_name, mime_type, size_bytes),
+            maintenance_logs (
+              id, performed_on, notes, cost, km_reading,
+              attachments:maintenance_log_attachments(id, file_path, file_name, mime_type, size_bytes)
+            )
+          `)
+          .eq('asset_id', assetId)
+          .is('deleted_at', null)
+          .order('next_due', { ascending: true, nullsFirst: false }),
+        getTemplateForAsset(assetId),
+      ])
+      if (aErr) throw aErr
+      if (tErr) throw tErr
+      setAsset(a)
+      setPublishedTemplate(tpl)
+      const sorted = (t ?? [])
+        .map(task => ({
+          ...task,
+          maintenance_logs: (task.maintenance_logs ?? [])
+            .sort((x, y) => y.performed_on.localeCompare(x.performed_on)),
+        }))
+        .sort((a, b) => {
+          const da = a.fixed_due_date ?? a.next_due
+          const db = b.fixed_due_date ?? b.next_due
+          if (!da && !db) return 0
+          if (!da) return 1
+          if (!db) return -1
+          return da.localeCompare(db)
+        })
+      setTasks(sorted)
+    } catch (e) {
+      console.error('AssetDetail load feilet:', e)
+      setLoadError(e.message ?? 'Kunne ikke laste eiendel')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleLogSaved(task) {
@@ -338,6 +348,21 @@ export default function AssetDetail() {
   if (loading) return (
     <div className="container" style={{ display: 'flex', justifyContent: 'center', paddingTop: 'var(--space-8)' }}>
       <Spinner size="md" />
+    </div>
+  )
+  if (loadError) return (
+    <div className="container" style={{ paddingTop: 'var(--space-8)' }}>
+      <EmptyState
+        icon="wrench"
+        title="Noe gikk galt"
+        description={loadError}
+        action={
+          <div className="row">
+            <Button onClick={load}>Prøv igjen</Button>
+            <Button variant="ghost" icon="arrowLeft" onClick={() => navigate('/')}>Tilbake</Button>
+          </div>
+        }
+      />
     </div>
   )
   if (!asset) return (

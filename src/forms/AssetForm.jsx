@@ -38,6 +38,11 @@ const REGNR_RE = /^[A-Za-z]{2}\s?\d{4,5}$/
 
 export default function AssetForm({ asset, onClose, onSaved }) {
   const isEdit = !!asset
+  // draftId tracks the DB row id once it's been created — either the existing
+  // asset.id on edit, or a newly-inserted draft id created by handleCoverSelect.
+  // We need this in state (not a prop ref) so handleSave can see the id even
+  // after a cover-image upload triggered a draft insert.
+  const [draftId, setDraftId] = useState(asset?.id ?? null)
   const [form, setForm] = useState({
     name:         asset?.name         ?? '',
     category:     asset?.category     ?? '',
@@ -122,8 +127,9 @@ export default function AssetForm({ asset, onClose, onSaved }) {
   async function handleCoverSelect(file) {
     setError(null)
     try {
-      let id = asset?.id
+      let id = draftId
       if (!id) {
+        // No row yet — insert a draft so we have a stable storage path
         const { data, error: insertErr } = await supabase
           .from('assets')
           .insert({ name: form.name || 'Ny eiendel', category: form.category || null, postal_code: form.postal_code || null, regnr: form.regnr || null })
@@ -131,7 +137,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
           .single()
         if (insertErr) throw insertErr
         id = data.id
-        asset = data
+        setDraftId(id)   // persist to state so handleSave can reuse the same row
       }
       const { url } = await uploadAssetCover(id, file)
       setField('image_url', url)
@@ -146,8 +152,8 @@ export default function AssetForm({ asset, onClose, onSaved }) {
       const path = storagePathFromUrl(form.image_url)
       if (path) await deleteFile(path)
       setField('image_url', '')
-      if (asset?.id) {
-        await supabase.from('assets').update({ image_url: null }).eq('id', asset.id)
+      if (draftId) {
+        await supabase.from('assets').update({ image_url: null }).eq('id', draftId)
       }
     } catch (e) {
       setError(e.message)
@@ -171,13 +177,13 @@ export default function AssetForm({ asset, onClose, onSaved }) {
 
       let savedId
 
-      if (asset?.id) {
-        // Update — either editing an existing asset or a draft was already created
-        const { error } = await supabase.from('assets').update(payload).eq('id', asset.id)
+      if (draftId) {
+        // Update — either editing an existing asset or a draft was pre-created by handleCoverSelect
+        const { error } = await supabase.from('assets').update(payload).eq('id', draftId)
         if (error) throw error
-        savedId = asset.id
+        savedId = draftId
       } else {
-        // New asset — insert and capture id
+        // New asset with no draft — insert fresh
         const { data, error } = await supabase.from('assets').insert(payload).select('id').single()
         if (error) throw error
         savedId = data.id

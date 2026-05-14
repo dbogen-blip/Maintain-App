@@ -127,6 +127,7 @@ export default function Home() {
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [assets, setAssets]         = useState([])
   const [loading, setLoading]       = useState(true)
+  const [fetchError, setFetchError] = useState(null)
   const [search, setSearch]         = useState('')
   const [filter, setFilter]         = useState('')
   const [editing, setEditing]       = useState(null)
@@ -136,29 +137,38 @@ export default function Home() {
 
   async function fetchAll() {
     setLoading(true)
+    setFetchError(null)
+    try {
+      const [{ data, error: aErr }, { data: kmRows, error: kErr }] = await Promise.all([
+        supabase
+          .from('assets')
+          .select('id, name, category, description, image_url, regnr, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
+          .is('deleted_at', null)
+          .order('name'),
+        // Latest km reading per asset (used to evaluate km-based task urgency).
+        // RLS ensures only the current user's logs are returned.
+        supabase
+          .from('maintenance_logs')
+          .select('asset_id, km_reading, performed_on')
+          .not('km_reading', 'is', null)
+          .order('performed_on', { ascending: false }),
+      ])
+      if (aErr) throw aErr
+      if (kErr) throw kErr
 
-    const [{ data }, { data: kmRows }] = await Promise.all([
-      supabase
-        .from('assets')
-        .select('id, name, category, description, image_url, regnr, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
-        .is('deleted_at', null)
-        .order('name'),
-      // Latest km reading per asset (used to evaluate km-based task urgency)
-      supabase
-        .from('maintenance_logs')
-        .select('asset_id, km_reading, performed_on')
-        .not('km_reading', 'is', null)
-        .order('performed_on', { ascending: false }),
-    ])
+      // Build map: assetId → most recent km_reading
+      const latestKm = new Map()
+      for (const row of kmRows ?? []) {
+        if (!latestKm.has(row.asset_id)) latestKm.set(row.asset_id, row.km_reading)
+      }
 
-    // Build map: assetId → highest km_reading seen (most recent odometer value)
-    const latestKm = new Map()
-    for (const row of kmRows ?? []) {
-      if (!latestKm.has(row.asset_id)) latestKm.set(row.asset_id, row.km_reading)
+      setAssets((data ?? []).map(a => ({ ...a, currentKm: latestKm.get(a.id) ?? null })))
+    } catch (e) {
+      console.error('fetchAll feilet:', e)
+      setFetchError(e.message ?? 'Kunne ikke laste eiendeler')
+    } finally {
+      setLoading(false)
     }
-
-    setAssets((data ?? []).map(a => ({ ...a, currentKm: latestKm.get(a.id) ?? null })))
-    setLoading(false)
   }
 
   async function quickMarkDone(task) {
@@ -242,9 +252,21 @@ export default function Home() {
     })
   }, [assets, search, filter])
 
+  // Derived: how many attention tasks are already overdue (not just upcoming)
+  const overdueCount = attentionTasks.filter(
+    t => (t.kmDiff !== null && t.kmDiff <= 0) || (t.d !== null && t.d < 0)
+  ).length
+
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <Spinner size="md" />
+    </div>
+  )
+
+  if (fetchError) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 'var(--space-3)' }}>
+      <p style={{ color: 'var(--color-danger-600)' }}>{fetchError}</p>
+      <Button variant="secondary" onClick={fetchAll}>Prøv igjen</Button>
     </div>
   )
 
@@ -279,7 +301,7 @@ export default function Home() {
           <section className="home-section">
             <div className="home-section-header">
               <h2>Trenger oppmerksomhet</h2>
-              <Badge variant={stats.overdue > 0 ? 'danger' : 'warning'}>
+              <Badge variant={overdueCount > 0 ? 'danger' : 'warning'}>
                 {attentionTasks.length}
               </Badge>
             </div>

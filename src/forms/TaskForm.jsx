@@ -270,6 +270,44 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
             />
           </div>
         </>
+      ) : mode === 'km' ? (
+        <>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-2)' }}>
+            {[
+              { km: 5000,  label:  '5 000 km' },
+              { km: 10000, label: '10 000 km' },
+              { km: 15000, label: '15 000 km' },
+              { km: 30000, label: '30 000 km' },
+            ].map(({ km, label }) => (
+              <button
+                key={km}
+                type="button"
+                className={`chip${Number(form.interval_km) === km ? ' chip-active' : ''}`}
+                onClick={() => setField('interval_km', km)}
+              >{label}</button>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', alignItems: 'start' }}>
+            <Input
+              label="Km-intervall"
+              type="number"
+              min="1"
+              placeholder="f.eks. 15000"
+              value={form.interval_km}
+              onChange={e => setField('interval_km', e.target.value)}
+              hint="Antall km mellom hver utførelse"
+            />
+            <Input
+              label="Sist utført ved (km)"
+              type="number"
+              min="0"
+              placeholder="f.eks. 75000"
+              value={form.last_done_km}
+              onChange={e => setField('last_done_km', e.target.value)}
+              hint="Tom = regn fra 0 km"
+            />
+          </div>
+        </>
       ) : (
         <div className="field">
           <label>Datoer (opptil 6)</label>
@@ -313,50 +351,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
               <Icon name="plus" size={14} /> Legg til dato
             </button>
           )}
-          <p style={{ margin: 'var(--space-2) 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-            Når en dato er utført, opprettes automatisk ny oppgave ett år frem i tid.
-          </p>
         </div>
-      )}
-
-      {mode === 'km' && (
-        <>
-          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-2)' }}>
-            {[
-              { km: 5000,  label:  '5 000 km' },
-              { km: 10000, label: '10 000 km' },
-              { km: 15000, label: '15 000 km' },
-              { km: 30000, label: '30 000 km' },
-            ].map(({ km, label }) => (
-              <button
-                key={km}
-                type="button"
-                className={`chip${Number(form.interval_km) === km ? ' chip-active' : ''}`}
-                onClick={() => setField('interval_km', km)}
-              >{label}</button>
-            ))}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', alignItems: 'start' }}>
-            <Input
-              label="Km-intervall"
-              type="number"
-              min="1"
-              placeholder="f.eks. 15000"
-              value={form.interval_km}
-              onChange={e => setField('interval_km', e.target.value)}
-              hint="Antall km mellom hver utførelse"
-            />
-            <Input
-              label="Sist utført ved (km)"
-              type="number"
-              min="0"
-              placeholder="f.eks. 75000"
-              value={form.last_done_km}
-              onChange={e => setField('last_done_km', e.target.value)}
-              hint="Tom = regn fra 0 km"
-            />
-          </div>
-        </>
       )}
 
       <Select
