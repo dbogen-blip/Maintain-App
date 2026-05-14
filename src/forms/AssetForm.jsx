@@ -24,12 +24,13 @@ import PostalCodeInput from '../components/PostalCodeInput'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
+// Pinned first, then the rest alphabetically, "Annet" always last
 const CATEGORIES = [
-  'Bil', 'MC/ATV', 'Lastebil/Buss', 'Traktor/Maskin',
-  'Båt', 'Tilhenger', 'Campingvogn', 'Bobil',
-  'Hus', 'Leilighet', 'Hytte',
-  'Hage', 'Sykkel',
-  'Elektriske og manuelle verktøy', 'Bensindrevne verktøy', 'Annet',
+  'Hus', 'Bil', 'Hytte', 'Båt',
+  'Bensindrevne verktøy', 'Bobil', 'Campingvogn', 'Elektriske og manuelle verktøy',
+  'Hage', 'Lastebil/Buss', 'Leilighet', 'MC/ATV', 'Sykkel',
+  'Tilhenger', 'Traktor/Maskin',
+  'Annet',
 ]
 
 const VEHICLE_CATEGORIES = ['Bil', 'MC/ATV', 'Lastebil/Buss', 'Traktor/Maskin', 'Bobil', 'Campingvogn', 'Tilhenger']
