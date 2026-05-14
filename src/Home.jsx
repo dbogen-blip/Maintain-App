@@ -100,27 +100,50 @@ function daysUntil(dateStr) {
   return Math.round((target - today) / 86400000)
 }
 
+// Returns the overall health status of an asset based on its active tasks.
+// Four levels: critical (very overdue) → overdue → warning (soon) → ok → none
 function assetStatus(tasks, currentKm) {
-  const scores = tasks.flatMap(t => {
+  // Completed fixed-date tasks are not active concerns
+  const active = tasks.filter(t => !(t.fixed_due_date && t.last_done))
+  if (active.length === 0) return { level: 'none', label: 'Ingen oppgaver' }
+
+  let worst = Infinity // lower = more urgent
+  for (const t of active) {
     if (t.interval_type === 'km') {
-      if (t.next_due_km == null || currentKm == null) return []
-      return [{ type: 'km', val: t.next_due_km - currentKm }]
+      if (t.next_due_km == null || currentKm == null) continue
+      const v = t.next_due_km - currentKm
+      if (v < worst) worst = v
+    } else {
+      const due = t.fixed_due_date ?? t.next_due
+      if (!due) continue
+      const d = daysUntil(due)
+      if (d !== null && d < worst) worst = d
     }
-    const d = daysUntil(t.fixed_due_date ?? t.next_due)
-    return d !== null ? [{ type: 'days', val: d }] : []
-  })
-  if (scores.length === 0) return { variant: 'neutral', text: 'Ingen oppgaver' }
-  const worst = scores.reduce((a, b) => a.val < b.val ? a : b)
-  const { type, val } = worst
-  if (type === 'km') {
-    if (val <= 0)    return { variant: 'danger',  text: `Forfalt ${(-val).toLocaleString('nb-NO')} km` }
-    if (val <= 500)  return { variant: 'warning', text: `Om ${val.toLocaleString('nb-NO')} km` }
-    return                  { variant: 'success', text: `Om ${val.toLocaleString('nb-NO')} km` }
   }
-  if (val < 0)  return { variant: 'danger',  text: `Forfalt ${-val}d` }
-  if (val === 0) return { variant: 'warning', text: 'Forfaller i dag' }
-  if (val <= 30) return { variant: 'warning', text: `Om ${val}d` }
-  return { variant: 'success', text: `Om ${val}d` }
+  if (worst === Infinity)  return { level: 'ok',       label: 'Alt OK'       }
+  if (worst < -7)          return { level: 'critical',  label: 'Kritisk'      }
+  if (worst <= 0)          return { level: 'overdue',   label: 'Forfalt'      }
+  if (worst <= 14)         return { level: 'warning',   label: 'Snart'        }
+  return                          { level: 'ok',        label: 'Alt OK'       }
+}
+
+// Returns the single most urgent active task for display on the card.
+function nextDueTask(tasks, currentKm) {
+  const active = tasks.filter(t => !(t.fixed_due_date && t.last_done))
+  let best = null, bestVal = Infinity
+  for (const t of active) {
+    if (t.interval_type === 'km') {
+      if (t.next_due_km == null || currentKm == null) continue
+      const diff = t.next_due_km - currentKm
+      if (diff < bestVal) { bestVal = diff; best = { title: t.title, kind: 'km', km: diff } }
+    } else {
+      const due = t.fixed_due_date ?? t.next_due
+      if (!due) continue
+      const d = daysUntil(due)
+      if (d !== null && d < bestVal) { bestVal = d; best = { title: t.title, kind: 'days', days: d } }
+    }
+  }
+  return best
 }
 
 export default function Home() {
@@ -414,8 +437,22 @@ export default function Home() {
           ) : (
             <div className="asset-grid">
               {filtered.map(a => {
-                const s = assetStatus(a.tasks ?? [], a.currentKm)
-                const count = (a.tasks ?? []).length
+                const tasks      = a.tasks ?? []
+                const s          = assetStatus(tasks, a.currentKm)
+                const next       = nextDueTask(tasks, a.currentKm)
+                const totalCount = tasks.length
+                const doneCount  = tasks.filter(t => t.last_done).length
+                const activeCount = tasks.filter(t => !(t.fixed_due_date && t.last_done)).length
+
+                const nextWhenText = !next ? null
+                  : next.kind === 'km'
+                    ? next.km <= 0
+                      ? `forfalt ${(-next.km).toLocaleString('nb-NO')} km siden`
+                      : `om ${next.km.toLocaleString('nb-NO')} km`
+                  : next.days < 0  ? `forfalt`
+                  : next.days === 0 ? 'i dag'
+                  : `om ${next.days} dag${next.days === 1 ? '' : 'er'}`
+
                 return (
                   <Card
                     key={a.id}
@@ -425,21 +462,69 @@ export default function Home() {
                     tabIndex={0}
                     onKeyDown={e => { if (e.key === 'Enter') navigate('/assets/' + a.id) }}
                   >
-                    <div className="asset-cover">
-                      {a.image_url
-                        ? <img src={a.image_url} alt="" />
-                        : <img {...categoryImgProps(a.category)} alt="" />}
+                    {/* ── Top: thumbnail + name ── */}
+                    <div className="ac-top">
+                      <div className="ac-thumb">
+                        {a.image_url
+                          ? <img src={a.image_url} alt="" />
+                          : <img {...categoryImgProps(a.category)} alt="" />}
+                      </div>
+                      <div className="ac-info">
+                        <h3 className="ac-name">{a.name}</h3>
+                        {a.category && (
+                          <span className="ac-category">{a.category}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="asset-body">
-                      <h3>{a.name}</h3>
-                      <div className="asset-body-row">
-                        {a.category && <Badge>{a.category}</Badge>}
-                        <span className="asset-task-count">
-                          <Icon name="list" size={12} />{count} oppgave{count !== 1 ? 'r' : ''}
+
+                    {/* ── Middle: next task + status ── */}
+                    <div className="ac-middle">
+                      <div className="ac-next">
+                        <span className="ac-label">Neste oppgave</span>
+                        {next ? (
+                          <div className="ac-next-task">
+                            <Icon name="clock" size={13} />
+                            <span className="ac-next-title">{next.title}</span>
+                            <span className={`ac-next-when${next.kind === 'days' && next.days <= 0 ? ' ac-next-overdue' : ''}`}>
+                              {nextWhenText}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="ac-next-empty">Ingen planlagte</div>
+                        )}
+                      </div>
+                      <div className="ac-status-col">
+                        <span className="ac-label">Status</span>
+                        <span className={`ac-status-pill ac-status-${s.level}`}>
+                          <span className="ac-status-dot" />
+                          {s.label}
                         </span>
                       </div>
-                      <div style={{ marginTop: 'var(--space-2)' }}>
-                        <Badge variant={s.variant}>{s.text}</Badge>
+                    </div>
+
+                    {/* ── Stats strip ── */}
+                    <div className="ac-stats">
+                      <div className="ac-stat">
+                        <Icon name="list" size={15} />
+                        <strong>{activeCount}</strong>
+                        <span>oppgaver</span>
+                      </div>
+                      <div className="ac-stat">
+                        <Icon name="check" size={15} />
+                        <strong>{doneCount}/{totalCount}</strong>
+                        <span>utfort</span>
+                      </div>
+                      <div className="ac-stat">
+                        <Icon name="calendar" size={15} />
+                        <strong>
+                          {!next ? '—'
+                            : next.kind === 'km'
+                              ? next.km <= 0 ? 'Forfalt' : `${next.km.toLocaleString('nb-NO')} km`
+                              : next.days < 0 ? 'Forfalt'
+                              : next.days === 0 ? 'I dag'
+                              : `${next.days} dager`}
+                        </strong>
+                        <span>neste forfall</span>
                       </div>
                     </div>
                   </Card>
