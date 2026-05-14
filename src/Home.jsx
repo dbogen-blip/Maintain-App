@@ -16,6 +16,7 @@ import EmptyState from './components/EmptyState'
 import ConfirmDialog from './components/ConfirmDialog'
 import Spinner from './components/Spinner'
 import AssetForm from './forms/AssetForm'
+import LogForm from './forms/LogForm'
 import InstallPrompt from './components/InstallPrompt'
 import { categoryImgProps } from './categoryImages'
 import { formatDate } from './lib/format'
@@ -131,7 +132,7 @@ export default function Home() {
   const [search, setSearch]         = useState('')
   const [filter, setFilter]         = useState('')
   const [editing, setEditing]       = useState(null)
-  const [markingId, setMarkingId]   = useState(null)
+  const [loggingTask, setLoggingTask] = useState(null)  // attention task being logged
 
   useEffect(() => { fetchAll(); processEuRefresh() }, [])
 
@@ -142,7 +143,7 @@ export default function Home() {
       const [{ data, error: aErr }, { data: kmRows, error: kErr }] = await Promise.all([
         supabase
           .from('assets')
-          .select('id, name, category, description, image_url, regnr, tasks(id, title, next_due, fixed_due_date, interval_type, next_due_km)')
+          .select('id, name, category, description, image_url, regnr, tasks(id, asset_id, title, next_due, fixed_due_date, interval_type, next_due_km, repeat_after_years)')
           .is('deleted_at', null)
           .order('name'),
         // Latest km reading per asset (used to evaluate km-based task urgency).
@@ -171,16 +172,8 @@ export default function Home() {
     }
   }
 
-  async function quickMarkDone(task) {
-    setMarkingId(task.id)
-    await supabase.from('maintenance_logs').insert({
-      task_id:      task.id,
-      asset_id:     task.assetId,
-      performed_on: new Date().toISOString().slice(0, 10),
-    })
-    setMarkingId(null)
-
-    // If this is an EU-kontroll task and the asset has a regnr, schedule refresh
+  // Called by LogForm after a log is saved — also handles EU-kontroll refresh scheduling
+  async function handleLogSaved(task) {
     const isEu = task.title?.toLowerCase().includes('eu-kontroll')
     const parentAsset = assets.find(a => a.id === task.assetId)
     if (isEu && parentAsset?.regnr) {
@@ -198,7 +191,6 @@ export default function Home() {
         })
       }
     }
-
     fetchAll()
   }
 
@@ -336,13 +328,10 @@ export default function Home() {
                     </button>
                     <button
                       className="attention-check-btn"
-                      title="Marker som utført"
-                      disabled={markingId === task.id}
-                      onClick={() => quickMarkDone(task)}
+                      title="Registrer utført"
+                      onClick={() => setLoggingTask(task)}
                     >
-                      {markingId === task.id
-                        ? <Spinner size="xs" />
-                        : <Icon name="check" size={16} />}
+                      <Icon name="check" size={16} />
                     </button>
                   </div>
                 )
@@ -437,6 +426,16 @@ export default function Home() {
           asset={editing.id ? editing : null}
           onClose={() => setEditing(null)}
           onSaved={fetchAll}
+        />
+      )}
+
+      {loggingTask && (
+        <LogForm
+          task={loggingTask}
+          assetId={loggingTask.assetId}
+          assetCategory={loggingTask.assetCategory}
+          onClose={() => setLoggingTask(null)}
+          onSaved={() => handleLogSaved(loggingTask)}
         />
       )}
 

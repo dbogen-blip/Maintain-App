@@ -137,7 +137,7 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
         nextDue.setFullYear(nextDue.getFullYear() + task.repeat_after_years)
         const nextDueStr = nextDue.toISOString().slice(0, 10)
         await supabase.from('tasks').insert({
-          asset_id:           task.asset_id,
+          asset_id:           assetId,  // use prop — works from both Home and AssetDetail
           title:              task.title,
           fixed_due_date:     nextDueStr,
           repeat_after_years: task.repeat_after_years,
