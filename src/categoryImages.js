@@ -16,6 +16,8 @@ const SLUGS = {
   'Leilighet':                      'leilighet',
   'Hytte':                          'hytte',
   'Bobil':                          'bobil',
+  'Lastebil/Buss':                  'annet',
+  'Traktor/Maskin':                 'annet',
   'Annet':                          'annet',
 }
 

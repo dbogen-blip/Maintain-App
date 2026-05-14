@@ -194,11 +194,20 @@ export default function Home() {
     fetchAll()
   }
 
+  // Categories that always appear as quick-filter chips (when the user has assets there)
+  const PINNED_FILTERS = ['Hus', 'Bil', 'Hytte', 'Båt']
+
   const categories = useMemo(() => {
     const set = new Set()
     for (const a of assets) if (a.category) set.add(a.category)
     return [...set].sort()
   }, [assets])
+
+  // Split into pinned chips and "more" dropdown, both only showing categories
+  // the user actually has assets in
+  const pinnedCategories = PINNED_FILTERS.filter(c => categories.includes(c))
+  const moreCategories   = categories.filter(c => !PINNED_FILTERS.includes(c)).sort()
+  const filterIsMore     = !!filter && !PINNED_FILTERS.includes(filter)
 
   const attentionTasks = useMemo(() => {
     const items = []
@@ -360,14 +369,32 @@ export default function Home() {
               />
             </div>
             <div className="home-filters">
-              <button className={`chip${filter === '' ? ' chip-active' : ''}`} onClick={() => setFilter('')}>Alle</button>
-              {categories.map(c => (
+              <button
+                className={`chip${filter === '' ? ' chip-active' : ''}`}
+                onClick={() => setFilter('')}
+              >Alle</button>
+
+              {pinnedCategories.map(c => (
                 <button
                   key={c}
                   className={`chip${filter === c ? ' chip-active' : ''}`}
                   onClick={() => setFilter(filter === c ? '' : c)}
                 >{c}</button>
               ))}
+
+              {moreCategories.length > 0 && (
+                <select
+                  className={`chip filter-more-select${filterIsMore ? ' chip-active' : ''}`}
+                  value={filterIsMore ? filter : ''}
+                  onChange={e => setFilter(e.target.value || '')}
+                  aria-label="Flere kategorier"
+                >
+                  <option value="">Mer</option>
+                  {moreCategories.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 

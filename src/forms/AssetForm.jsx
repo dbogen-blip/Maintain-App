@@ -25,13 +25,14 @@ import PostalCodeInput from '../components/PostalCodeInput'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
 const CATEGORIES = [
-  'Bil', 'MC/ATV', 'Båt', 'Tilhenger', 'Campingvogn', 'Bobil',
+  'Bil', 'MC/ATV', 'Lastebil/Buss', 'Traktor/Maskin',
+  'Båt', 'Tilhenger', 'Campingvogn', 'Bobil',
   'Hus', 'Leilighet', 'Hytte',
   'Hage', 'Sykkel',
   'Elektriske og manuelle verktøy', 'Bensindrevne verktøy', 'Annet',
 ]
 
-const VEHICLE_CATEGORIES = ['Bil', 'MC/ATV', 'Bobil', 'Campingvogn', 'Tilhenger']
+const VEHICLE_CATEGORIES = ['Bil', 'MC/ATV', 'Lastebil/Buss', 'Traktor/Maskin', 'Bobil', 'Campingvogn', 'Tilhenger']
 
 // Norwegian plate: 2 letters + 4–5 digits (MC/ATV use 4, cars use 5), optional space
 const REGNR_RE = /^[A-Za-z]{2}\s?\d{4,5}$/

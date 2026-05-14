@@ -19,8 +19,8 @@ import Button from '../components/Button'
 import Icon from '../components/Icon'
 import FileUpload from '../components/FileUpload'
 
-// Vehicle categories where km-based intervals make sense
-const KM_CATEGORIES = ['Bil', 'MC/ATV', 'Campingvogn']
+// Vehicle/machine categories where km-based intervals make sense
+const KM_CATEGORIES = ['Bil', 'MC/ATV', 'Lastebil/Buss', 'Traktor/Maskin', 'Campingvogn']
 
 export default function TaskForm({ assetId, task, assetCategory, onClose, onSaved }) {
   const isEdit    = !!task
