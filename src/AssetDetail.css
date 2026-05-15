@@ -1,12 +1,18 @@
 .detail-hero {
+  display: flex;
+  align-items: flex-start;
   overflow: hidden;
   margin-top: var(--space-3);
 }
+
+/* Small 16:9 thumbnail — left side */
 .detail-hero-image {
-  width: 100%;
-  aspect-ratio: 21 / 9;
+  width: 220px;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
   background: var(--color-surface-alt);
   overflow: hidden;
+  border-right: 1px solid var(--color-border);
 }
 .detail-hero-image img {
   width: 100%;
@@ -14,7 +20,55 @@
   object-fit: cover;
   display: block;
 }
-.detail-hero-body { padding: var(--space-5); }
+
+/* Right side: name, badges, actions, description */
+.detail-hero-body {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detail-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.detail-hero-meta { flex: 1; min-width: 0; }
+.detail-hero-meta h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-hero-desc {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 560px) {
+  .detail-hero { flex-direction: column; }
+  .detail-hero-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .asset-btn-label { display: none; }
+  .asset-hero-actions .btn {
+    height: 32px;
+    min-width: unset;
+    padding: 0 var(--space-2);
+  }
+}
 
 .task-list {
   display: flex;
@@ -162,20 +216,8 @@
 }
 
 @media (max-width: 560px) {
-  .asset-btn-label { display: none; }
   .task-section-header {
-    display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-2);
-  }
-  .asset-hero-actions .btn {
-    height: 28px;
-    min-width: unset;
-    padding: 0 var(--space-2);
-  }
-  .asset-hero-actions .btn svg {
-    width: 14px;
-    height: 14px;
   }
 }

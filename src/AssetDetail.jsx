@@ -392,22 +392,27 @@ export default function AssetDetail() {
       <Button variant="ghost" icon="arrowLeft" onClick={() => navigate(-1)}>Tilbake</Button>
 
       <Card className="detail-hero" padding={0}>
+        {/* Small 16:9 thumbnail — left */}
         <div className="detail-hero-image">
           {asset.image_url
             ? <img src={asset.image_url} alt="" />
             : <img {...categoryImgProps(asset.category)} alt="" />}
         </div>
+
+        {/* Info + actions — right */}
         <div className="detail-hero-body">
-          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-            <div style={{ minWidth: 0 }}>
-              <h1 style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '30ch' }}>{asset.name}</h1>
+          <div className="detail-hero-top">
+            {/* Name + badges */}
+            <div className="detail-hero-meta">
+              <h1>{asset.name}</h1>
               <div className="row" style={{ marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {asset.category && <Badge>{asset.category}</Badge>}
                 {asset.purchased_at && <Badge variant="neutral">Kjøpt {formatDate(asset.purchased_at)}</Badge>}
                 {asset.postal_code && <Badge variant="neutral"><Icon name="map-pin" size={11} /> {asset.postal_code}</Badge>}
               </div>
             </div>
-            <div className="row asset-hero-actions" style={{ flexWrap: 'nowrap', flexShrink: 0 }}>
+            {/* Action buttons — top right */}
+            <div className="row asset-hero-actions">
               <Button variant="secondary" icon="printer" onClick={() => navigate(`/assets/${assetId}/export`)}>
                 <span className="asset-btn-label">Historikk</span>
               </Button>
@@ -427,7 +432,7 @@ export default function AssetDetail() {
             </div>
           </div>
           {asset.description && (
-            <p style={{ marginTop: 'var(--space-3)', color: 'var(--color-text-muted)' }}>{asset.description}</p>
+            <p className="detail-hero-desc">{asset.description}</p>
           )}
         </div>
       </Card>
