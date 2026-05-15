@@ -117,6 +117,7 @@ export default function PublishModal({ asset, onClose, onPublished }) {
             value={displayName}
             onChange={e => { setDisplayName(e.target.value); setError(null) }}
             autoFocus
+            maxLength={50}
           />
         </div>
       )}

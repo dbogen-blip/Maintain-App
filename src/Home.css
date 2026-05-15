@@ -244,8 +244,8 @@
   padding: var(--space-4);
 }
 .ac-thumb {
-  width: 140px;
-  aspect-ratio: 16 / 9;
+  width: 120px;
+  aspect-ratio: 4 / 3;
   flex-shrink: 0;
   border-radius: var(--radius-md);
   overflow: hidden;

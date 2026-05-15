@@ -2,9 +2,19 @@ import './Input.css'
 
 export function Input({ label, hint, error, id, ...rest }) {
   const inputId = id || `i-${rest.name || rest.placeholder}`
+  const charCount = rest.maxLength && rest.value != null ? String(rest.value).length : null
   return (
     <div className="field">
-      {label && <label htmlFor={inputId}>{label}</label>}
+      {label && (
+        <div className="field-label-row">
+          <label htmlFor={inputId}>{label}</label>
+          {charCount !== null && (
+            <span className={`field-char-count${charCount >= rest.maxLength ? ' field-char-count-limit' : ''}`}>
+              {charCount}/{rest.maxLength}
+            </span>
+          )}
+        </div>
+      )}
       <input id={inputId} className={`input${error ? ' input-error' : ''}`} {...rest} />
       {error ? <span className="field-error">{error}</span> : hint && <span className="field-hint">{hint}</span>}
     </div>
@@ -13,9 +23,19 @@ export function Input({ label, hint, error, id, ...rest }) {
 
 export function Textarea({ label, hint, error, id, rows = 3, ...rest }) {
   const inputId = id || `t-${rest.name || rest.placeholder}`
+  const charCount = rest.maxLength && rest.value != null ? String(rest.value).length : null
   return (
     <div className="field">
-      {label && <label htmlFor={inputId}>{label}</label>}
+      {label && (
+        <div className="field-label-row">
+          <label htmlFor={inputId}>{label}</label>
+          {charCount !== null && (
+            <span className={`field-char-count${charCount >= rest.maxLength ? ' field-char-count-limit' : ''}`}>
+              {charCount}/{rest.maxLength}
+            </span>
+          )}
+        </div>
+      )}
       <textarea id={inputId} rows={rows} className={`input${error ? ' input-error' : ''}`} {...rest} />
       {error ? <span className="field-error">{error}</span> : hint && <span className="field-hint">{hint}</span>}
     </div>

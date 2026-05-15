@@ -222,6 +222,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
             value={form.name}
             onChange={handleNameChange}
             autoFocus
+            maxLength={80}
             style={{ width: '100%' }}
           />
           {lookupState === 'loading' && (
@@ -263,6 +264,7 @@ export default function AssetForm({ asset, onClose, onSaved }) {
         value={form.description}
         onChange={e => setField('description', e.target.value)}
         rows={5}
+        maxLength={500}
       />
 
       <Input

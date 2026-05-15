@@ -93,6 +93,56 @@ export function isImage(mime) {
   return typeof mime === 'string' && mime.startsWith('image/')
 }
 
+/**
+ * Compress an image file to stay under maxBytes (default 1 MB).
+ * Returns the original file unchanged for non-image types or already-small files.
+ * Uses canvas + JPEG re-encoding with progressive quality reduction.
+ */
+export function compressImage(file, maxBytes = 1024 * 1024) {
+  if (!isImage(file.type)) return Promise.resolve(file)
+  if (file.size <= maxBytes) return Promise.resolve(file)
+
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      let { width, height } = img
+
+      // Cap longest side at 1920px to reduce large photos
+      const MAX_SIDE = 1920
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        const scale = MAX_SIDE / Math.max(width, height)
+        width  = Math.round(width  * scale)
+        height = Math.round(height * scale)
+      }
+      canvas.width  = width
+      canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+
+      let quality = 0.82
+      const attempt = () => {
+        canvas.toBlob(blob => {
+          if (!blob) { resolve(file); return }
+          if (blob.size <= maxBytes || quality < 0.25) {
+            const name = file.name.replace(/\.[^.]+$/, '.jpg')
+            resolve(new File([blob], name, { type: 'image/jpeg' }))
+          } else {
+            quality = Math.round((quality - 0.1) * 100) / 100
+            attempt()
+          }
+        }, 'image/jpeg', quality)
+      }
+      attempt()
+    }
+
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
+}
+
 export function humanSize(bytes) {
   if (bytes == null) return ''
   if (bytes < 1024) return `${bytes} B`

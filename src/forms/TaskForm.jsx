@@ -218,6 +218,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
         value={form.title}
         onChange={e => setField('title', e.target.value)}
         autoFocus
+        maxLength={80}
       />
 
       <div className="field">
@@ -442,6 +443,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
         value={form.description}
         onChange={e => setField('description', e.target.value)}
         rows={5}
+        maxLength={2000}
         hint="Lang beskrivelse — bruk vedlegg under for PDF, bilder ol."
       />
 
@@ -451,6 +453,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
         value={form.notes}
         onChange={e => setField('notes', e.target.value)}
         rows={2}
+        maxLength={300}
       />
 
       <div className="field">

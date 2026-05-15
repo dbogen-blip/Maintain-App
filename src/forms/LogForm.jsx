@@ -197,6 +197,7 @@ export default function LogForm({ task, assetId, assetCategory, onClose, onSaved
         value={form.notes}
         onChange={e => setField('notes', e.target.value)}
         rows={3}
+        maxLength={1000}
       />
 
       <div className="field">

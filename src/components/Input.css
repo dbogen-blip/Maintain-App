@@ -4,12 +4,25 @@
   gap: var(--space-1);
   margin-bottom: var(--space-4);
 }
+.field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
 .field label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
   letter-spacing: -0.01em;
 }
+.field-char-count {
+  font-size: 11px;
+  color: var(--color-text-soft);
+  flex-shrink: 0;
+  font-weight: var(--font-weight-normal);
+}
+.field-char-count-limit { color: var(--color-warning-700); font-weight: var(--font-weight-medium); }
 .field-hint  { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 .field-error { font-size: var(--font-size-xs); color: var(--color-danger-600); }
 
