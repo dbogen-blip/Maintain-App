@@ -17,7 +17,7 @@ const SLUGS = {
   'Hytte':                          'hytte',
   'Bobil':                          'bobil',
   'Lastebil/Buss':                  'annet',
-  'Traktor/Maskin':                 'annet',
+  'Traktor/Maskin':                 'traktor_makskin',
   'Annet':                          'annet',
 }
 

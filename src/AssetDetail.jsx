@@ -132,6 +132,56 @@ export default function AssetDetail() {
     ].filter(g => g.tasks.length > 0)
   }, [tasks, currentKm])
 
+  // ── Hero stat computations ───────────────────────────────────────────
+  const heroStatus = useMemo(() => {
+    const overdueG = taskGroups.find(g => g.id === 'overdue')
+    const soonG    = taskGroups.find(g => g.id === 'soon')
+    const active   = tasks.filter(t => !(t.fixed_due_date && t.last_done))
+    if (overdueG?.tasks.length > 0) {
+      const n = overdueG.tasks.length
+      return { level: 'danger',  label: n === 1 ? '1 forfalt' : `${n} forfalt`,
+               sub: 'Krever oppmerksomhet', icon: 'alertCircle' }
+    }
+    if (soonG?.tasks.length > 0) {
+      const n = soonG.tasks.length
+      return { level: 'warning', label: n === 1 ? '1 forfaller snart' : `${n} forfaller snart`,
+               sub: 'Innen 14 dager', icon: 'clock' }
+    }
+    if (active.length === 0) {
+      return { level: 'neutral', label: 'Ingen oppgaver', sub: 'Legg til oppgaver', icon: 'list' }
+    }
+    return { level: 'success', label: 'Alt OK', sub: 'Ingen oppgaver forfalt', icon: 'check' }
+  }, [taskGroups, tasks])
+
+  const nextTaskInfo = useMemo(() => {
+    const active = tasks.filter(t => !(t.fixed_due_date && t.last_done) && t.interval_type !== 'km')
+    let best = null, bestDue = null
+    for (const t of active) {
+      const due = t.fixed_due_date ?? t.next_due
+      if (!due) continue
+      if (!bestDue || due < bestDue) { best = t; bestDue = due }
+    }
+    if (!best) return null
+    const d = daysUntil(bestDue)
+    const when = d < 0 ? `Forfalt for ${-d} dag${-d !== 1 ? 'er' : ''} siden`
+               : d === 0 ? 'I dag'
+               : d === 1 ? 'I morgen'
+               : `om ${d} dager`
+    return { task: best, days: d, when }
+  }, [tasks])
+
+  const loggedTasksCount = useMemo(() =>
+    tasks.filter(t => (t.maintenance_logs?.length ?? 0) > 0).length
+  , [tasks])
+
+  const euTask = useMemo(() =>
+    tasks.find(t =>
+      t.title?.toLowerCase().includes('eu-kontroll') &&
+      t.fixed_due_date && !(t.fixed_due_date && t.last_done)
+    )
+  , [tasks])
+  // ─────────────────────────────────────────────────────────────────────
+
   async function load() {
     setLoading(true)
     setLoadError(null)
@@ -393,7 +443,7 @@ export default function AssetDetail() {
       <Button variant="ghost" icon="arrowLeft" onClick={() => navigate(-1)}>Tilbake</Button>
 
       <Card className="detail-hero" padding={0}>
-        {/* ── Top: image | name+badges | stacked actions ── */}
+        {/* ── Top: image | name+badges+tiles | stacked actions ── */}
         <div className="detail-hero-top">
           <div className="detail-hero-image">
             {asset.image_url
@@ -403,10 +453,55 @@ export default function AssetDetail() {
 
           <div className="detail-hero-meta">
             <h1>{asset.name}</h1>
-            <div className="row" style={{ flexWrap: 'wrap', marginTop: 'var(--space-1)' }}>
+            <div className="detail-hero-badges">
               {asset.category    && <Badge>{asset.category}</Badge>}
               {asset.purchased_at && <Badge variant="neutral">Kjøpt {formatDate(asset.purchased_at)}</Badge>}
               {asset.postal_code  && <Badge variant="neutral"><Icon name="map-pin" size={11} /> {asset.postal_code}</Badge>}
+            </div>
+
+            {/* Stat tiles */}
+            <div className="detail-stat-tiles">
+              {/* Status */}
+              <div className={`detail-stat-tile detail-stat-tile--${heroStatus.level}`}>
+                <div className="detail-stat-tile-label">
+                  <Icon name={heroStatus.icon} size={13} />
+                  <span>Status</span>
+                </div>
+                <strong className="detail-stat-tile-value">{heroStatus.label}</strong>
+                <span className="detail-stat-tile-sub">{heroStatus.sub}</span>
+              </div>
+
+              {/* Next task */}
+              <div className={`detail-stat-tile detail-stat-tile--${
+                nextTaskInfo
+                  ? nextTaskInfo.days < 0 ? 'danger'
+                  : nextTaskInfo.days <= 14 ? 'warning'
+                  : 'warning'
+                  : 'neutral'
+              }`}>
+                <div className="detail-stat-tile-label">
+                  <Icon name="clock" size={13} />
+                  <span>Neste oppgave</span>
+                </div>
+                <strong className="detail-stat-tile-value">
+                  {nextTaskInfo ? nextTaskInfo.task.title : 'Ingen'}
+                </strong>
+                <span className="detail-stat-tile-sub">
+                  {nextTaskInfo ? nextTaskInfo.when : 'Ingen planlagte'}
+                </span>
+              </div>
+
+              {/* Tasks count */}
+              <div className="detail-stat-tile detail-stat-tile--neutral">
+                <div className="detail-stat-tile-label">
+                  <Icon name="list" size={13} />
+                  <span>Oppgaver</span>
+                </div>
+                <strong className="detail-stat-tile-value">{tasks.length}</strong>
+                <span className="detail-stat-tile-sub">
+                  {loggedTasksCount > 0 ? `${loggedTasksCount} fullført` : 'ingen utført'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -432,15 +527,22 @@ export default function AssetDetail() {
             <p className={`detail-hero-desc${descExpanded ? ' desc-expanded' : ''}`}>
               {asset.description}
             </p>
-            {asset.description.length > 160 && (
-              <button
-                type="button"
-                className="detail-hero-vis-mer"
-                onClick={() => setDescExpanded(v => !v)}
-              >
-                {descExpanded ? 'Vis mindre ↑' : 'Vis mer ↓'}
-              </button>
-            )}
+            <div className="detail-hero-desc-footer">
+              {asset.description.length > 160 && (
+                <button
+                  type="button"
+                  className="detail-hero-vis-mer"
+                  onClick={() => setDescExpanded(v => !v)}
+                >
+                  {descExpanded ? 'Vis mindre ↑' : 'Vis mer ↓'}
+                </button>
+              )}
+              {euTask && (
+                <span className="detail-eu-frist">
+                  EU-kontroll frist: {formatDate(euTask.fixed_due_date)}
+                </span>
+              )}
+            </div>
           </div>
         )}
       </Card>
