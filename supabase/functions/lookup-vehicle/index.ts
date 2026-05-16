@@ -38,15 +38,21 @@ Deno.serve(async (req) => {
   const arskode   = kd.forstegangsregistrering?.registrertForstegangNorgeDato?.slice(0, 4) ?? ''
 
   const ovrige: any[] = teknisk?.ovrigeTekniskeData ?? []
-  const spesial = ovrige.find((o: any) => o.datafeltNavn === 'spesialkarosseriTekst')?.datafeltVerdi?.toLowerCase() ?? ''
+  const spesialKode = ovrige.find((o: any) => o.datafeltNavn === 'spesialkarosseriKode')?.datafeltVerdi?.toUpperCase() ?? ''
+  const spesial     = ovrige.find((o: any) => o.datafeltNavn === 'spesialkarosseriTekst')?.datafeltVerdi?.toLowerCase() ?? ''
 
+  // Classification logic:
+  //  - spesialkarosseriKode 'SA' = Campingbil (motorhome) → Bobil
+  //  - spesialkarosseriTekst 'campingbil' → Bobil (belt-and-suspenders)
+  //  - typeKode O* (trailer/semi) with camping body text → Campingvogn
+  //  - typeKode O* without camping body → Tilhenger
+  //  - typeKode L* → MC/ATV
+  //  - everything else motorized → Bil
   let category = 'Bil'
-  if (spesial.includes('camping'))  category = 'Campingvogn'
-  else if (karosseri === 'SA')      category = 'Bobil'
-  else if (/^M/.test(typeKode))     category = 'Bil'
-  else if (/^N/.test(typeKode))     category = 'Bil'
-  else if (/^L/.test(typeKode))     category = 'MC/ATV'
-  else if (/^O/.test(typeKode))     category = 'Tilhenger'
+  if (spesialKode === 'SA' || spesial === 'campingbil') category = 'Bobil'
+  else if (/^O/.test(typeKode) && spesial.includes('camping')) category = 'Campingvogn'
+  else if (/^L/.test(typeKode))                         category = 'MC/ATV'
+  else if (/^O/.test(typeKode))                         category = 'Tilhenger'
 
   const motor         = teknisk?.motorOgDrivverk?.motor?.[0]
   const drift         = motor?.drivstoff?.[0]
