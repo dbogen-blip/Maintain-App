@@ -96,15 +96,16 @@ const DEMO_ASSETS = [
 // ── Static content ─────────────────────────────────────────────────────────
 const FORGOTTEN = [
   'EU-kontroll',
-  'Takrenner',
   'Varmepumpefilter',
   'Impeller (båtmotor)',
   'Bremsevæske',
   'Frostsikring campingvogn',
   'Batteriskift røykvarsler',
-  'Pipefeier',
   'Dekkbytte',
-  'Service aggregat',
+  'Snu brannslukningsapparat',
+  'Vaske ventilatorfilter',
+  'Male huset',
+  'Polere bilen',
 ]
 
 const STEPS = [
@@ -549,18 +550,23 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
               Gratis å komme i gang
             </div>
-            <h1>Vedlikehold alt du eier.<br /><span>På ett sted.</span></h1>
-            <p className="lp-hero-sub">
-              Automatiske påminnelser. Ferdig vedlikeholdsplan.<br />Ingen overraskelser.
-            </p>
-            <div className="lp-hero-ctas">
-              <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
-              <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
+            <h1>
+              Smarte vedlikeholdsplaner.<br />
+              Automatiske påminnelser.<br />
+              <span>Ingen overraskelser.</span>
+            </h1>
+            <div className="lp-hero-cta-area">
+              <div className="lp-hero-cta-left">
+                <div className="lp-hero-ctas">
+                  <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
+                  <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
+                </div>
+                <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
+              </div>
+              <div className="lp-hero-phone-wrap">
+                <AppMockup />
+              </div>
             </div>
-            <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
-          </div>
-          <div className="lp-hero-visual">
-            <AppMockup />
           </div>
         </div>
       </section>

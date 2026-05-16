@@ -18,10 +18,12 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 var(--space-6);
-  height: 60px;
+  /* Push content below status bar on iOS PWA (viewport-fit=cover) */
+  padding: env(safe-area-inset-top, 0px) var(--space-6) 0;
+  height: calc(60px + env(safe-area-inset-top, 0px));
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  padding-bottom: 10px;
   justify-content: space-between;
 }
 .lp-nav-logo {
@@ -138,10 +140,9 @@
   pointer-events: none;
 }
 .lp-hero-inner {
-  max-width: 1100px; margin: 0 auto;
-  padding: 88px var(--space-6) 80px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 64px;
-  align-items: center; position: relative; z-index: 1;
+  max-width: 860px; margin: 0 auto;
+  padding: 72px var(--space-6) 64px;
+  position: relative; z-index: 1;
 }
 .lp-hero-text { display: flex; flex-direction: column; align-items: flex-start; }
 .lp-hero-badge {
@@ -153,19 +154,53 @@
   margin-bottom: var(--space-5); letter-spacing: .03em; text-transform: uppercase;
 }
 .lp-hero-text h1 {
-  font-size: clamp(2.2rem, 4.5vw, 3.5rem); font-weight: 800;
-  letter-spacing: -0.04em; line-height: 1.06; color: #fff;
-  margin-bottom: var(--space-5);
+  font-size: clamp(1.75rem, 3.8vw, 2.9rem); font-weight: 800;
+  letter-spacing: -0.035em; line-height: 1.12; color: #fff;
+  margin-bottom: var(--space-8);
 }
 .lp-hero-text h1 span { color: #818cf8; }
-.lp-hero-sub {
-  font-size: var(--font-size-lg); color: rgba(255,255,255,.6); line-height: 1.6;
-  margin-bottom: var(--space-8); max-width: 400px;
+
+/* CTA row: buttons on left, small phone on right */
+.lp-hero-cta-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  width: 100%;
 }
-.lp-hero-ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.lp-hero-cta-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
+}
+.lp-hero-ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .lp-hero-note { font-size: var(--font-size-xs); color: rgba(255,255,255,.3); }
 
-.lp-hero-visual { display: flex; justify-content: center; align-items: flex-start; }
+/* Small phone mockup next to CTAs */
+.lp-hero-phone-wrap {
+  width: 155px;   /* 290 × 0.534 */
+  height: 220px;  /* cropped to roughly CTA block height */
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 28px;
+  /* subtle outer glow */
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 20px 40px -8px rgba(0,0,0,.6);
+}
+.lp-hero-phone-wrap .lp-phone {
+  position: absolute;
+  top: 0; left: 0;
+  /* scale down to fit wrapper width (290 → 155 = ×0.534) */
+  transform: perspective(600px) rotateY(-4deg) scale(0.534);
+  transform-origin: top left;
+  max-height: none; /* override 600px cap */
+  width: 290px;     /* explicit so scaling math is predictable */
+  box-shadow: none; /* outer shadow is on wrapper */
+}
+/* Fade the phone out at the bottom toward the hero bg */
+.lp-hero-phone-wrap .lp-phone::after {
+  background: linear-gradient(transparent 40%, #0f172a 100%);
+}
 
 /* ── Phone frame ───────────────────────────────────────────── */
 .lp-phone {
@@ -591,6 +626,8 @@
   background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: var(--radius-xl); padding: var(--space-5);
   display: flex; flex-direction: column; gap: var(--space-4);
+  overflow: hidden; /* prevent contents from bleeding outside modal */
+  min-width: 0;     /* allow flex child to shrink */
 }
 .lp-regnr-demo-header { display: flex; align-items: center; gap: var(--space-3); }
 .lp-regnr-demo-icon {
@@ -600,9 +637,10 @@
 }
 .lp-regnr-demo-title { font-size: var(--font-size-base); font-weight: var(--font-weight-bold); color: var(--color-navy); }
 .lp-regnr-demo-sub { font-size: var(--font-size-sm); color: var(--color-text-muted); margin-top: 2px; }
-.lp-regnr-demo-row { display: flex; gap: var(--space-2); }
+.lp-regnr-demo-row { display: flex; gap: var(--space-2); min-width: 0; }
 .lp-regnr-input {
-  flex: 1; padding: 10px 14px; border: 1.5px solid var(--color-border);
+  flex: 1; min-width: 0; /* allow shrinking */
+  padding: 10px 14px; border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md); font-size: var(--font-size-base); font-family: inherit;
   letter-spacing: .08em; text-transform: uppercase; color: var(--color-text);
   background: var(--color-surface); transition: border-color .15s;
@@ -623,7 +661,7 @@
   animation: lp-fade-in .2s ease-out;
 }
 .lp-regnr-result-name { font-size: var(--font-size-base); font-weight: var(--font-weight-bold); color: var(--color-navy); }
-.lp-regnr-result-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); white-space: pre-line; line-height: 1.6; }
+.lp-regnr-result-desc { font-size: var(--font-size-sm); color: var(--color-text-muted); white-space: pre-line; line-height: 1.6; overflow-wrap: break-word; word-break: break-word; }
 .lp-regnr-eu {
   display: flex; align-items: flex-start; gap: var(--space-2);
   font-size: var(--font-size-sm); color: var(--color-success-700);
@@ -676,13 +714,10 @@
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .lp-hero-inner {
-    grid-template-columns: 1fr;
-    padding: 64px var(--space-4) 48px;
-    gap: 48px;
-  }
-  .lp-hero-visual { justify-content: center; }
-  .lp-phone { transform: perspective(1000px) rotateY(0deg) rotateX(0deg); }
+  .lp-hero-inner { padding: 56px var(--space-4) 48px; }
+  /* Hide the small phone on mobile — text + CTAs fill the full width */
+  .lp-hero-phone-wrap { display: none; }
+  .lp-hero-cta-area { flex-direction: column; gap: var(--space-5); }
   .lp-hero-ctas { flex-direction: column; align-items: stretch; }
   .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
   .lp-ba-grid { grid-template-columns: 1fr; gap: var(--space-4); }
