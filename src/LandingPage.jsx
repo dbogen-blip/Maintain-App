@@ -408,6 +408,146 @@ const SAVINGS = [
   { big: 'Alt',    label: 'Fra bil og båt til hytte og hage – samlet på ett sted' },
 ]
 
+// ── App mockup (static HTML replica of the dashboard) ────────────────────
+function AppMockup() {
+  return (
+    <div className="lp-phone">
+      {/* Status bar */}
+      <div className="lp-mock-status">
+        <span>9:41</span>
+        <div className="lp-mock-status-icons">
+          <svg width="14" height="10" viewBox="0 0 24 16" fill="currentColor"><rect x="0"  y="6" width="4" height="10" rx="1"/><rect x="6"  y="4" width="4" height="12" rx="1"/><rect x="12" y="1" width="4" height="15" rx="1"/><rect x="18" y="0" width="4" height="16" rx="1" opacity=".35"/></svg>
+          <svg width="14" height="11" viewBox="0 0 24 18" fill="currentColor"><path d="M12 4.5C7 4.5 2.7 6.9 0 10.6L3 13c2.1-2.7 5.3-4.5 9-4.5s6.9 1.8 9 4.5l3-2.4C21.3 6.9 17 4.5 12 4.5z"/><path d="M12 9c-3.3 0-6.2 1.4-8.2 3.7l3 2.4c1.3-1.5 3.2-2.5 5.2-2.5s3.9 1 5.2 2.5l3-2.4C18.2 10.4 15.3 9 12 9z"/><circle cx="12" cy="17" r="2"/></svg>
+          <svg width="22" height="11" viewBox="0 0 30 14" fill="none"><rect x="1" y="1" width="24" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="none"/><rect x="26" y="4" width="2" height="6" rx="1" fill="currentColor" opacity=".5"/><rect x="2.5" y="2.5" width="18" height="9" rx="2" fill="currentColor"/></svg>
+        </div>
+      </div>
+
+      {/* App header */}
+      <div className="lp-mock-header">
+        <div className="lp-mock-brand">
+          <div className="lp-mock-logo-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <span>Maintain</span>
+        </div>
+        <div className="lp-mock-nav-icons">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+      </div>
+
+      <div className="lp-mock-body">
+        {/* Attention section */}
+        <div className="lp-mock-section-head">
+          <span className="lp-mock-section-title">Trenger oppmerksomhet</span>
+          <span className="lp-mock-count lp-mock-count--danger">2</span>
+        </div>
+        <div className="lp-mock-card">
+          <div className="lp-mock-att-row">
+            <div className="lp-mock-att-text">
+              <div className="lp-mock-att-task">EU-kontroll</div>
+              <div className="lp-mock-att-asset">🚗 Toyota RAV4</div>
+            </div>
+            <span className="lp-mock-pill lp-mock-pill--danger">Forfalt 5d</span>
+            <div className="lp-mock-check-btn">✓</div>
+          </div>
+          <div className="lp-mock-att-row lp-mock-att-row--border">
+            <div className="lp-mock-att-text">
+              <div className="lp-mock-att-task">Rens takrenner</div>
+              <div className="lp-mock-att-asset">🏠 Enebolig Stavanger</div>
+            </div>
+            <span className="lp-mock-pill lp-mock-pill--warning">Om 5d</span>
+            <div className="lp-mock-check-btn">✓</div>
+          </div>
+          <div className="lp-mock-att-row lp-mock-att-row--border">
+            <div className="lp-mock-att-text">
+              <div className="lp-mock-att-task">Dekkbytte sommer/vinter</div>
+              <div className="lp-mock-att-asset">🚗 Toyota RAV4</div>
+            </div>
+            <span className="lp-mock-pill lp-mock-pill--warning">Om 18d</span>
+            <div className="lp-mock-check-btn">✓</div>
+          </div>
+        </div>
+
+        {/* Assets section */}
+        <div className="lp-mock-section-head" style={{ marginTop: 10 }}>
+          <span className="lp-mock-section-title">Mine eiendeler</span>
+          <span className="lp-mock-add-btn">+ Ny</span>
+        </div>
+
+        {/* Asset card 1 — Bil */}
+        <div className="lp-mock-asset-card">
+          <div className="lp-mock-ac-top">
+            <div className="lp-mock-ac-thumb">
+              <img {...categoryImgProps('Bil')} alt="" />
+            </div>
+            <div className="lp-mock-ac-info">
+              <div className="lp-mock-ac-name">Toyota RAV4</div>
+              <span className="lp-mock-ac-cat">Bil</span>
+            </div>
+          </div>
+          <div className="lp-mock-ac-mid">
+            <div className="lp-mock-ac-next">
+              <div className="lp-mock-ac-lbl">Neste oppgave</div>
+              <div className="lp-mock-ac-task">EU-kontroll · <span className="lp-mock-overdue">forfalt</span></div>
+            </div>
+            <div>
+              <div className="lp-mock-ac-lbl" style={{ textAlign: 'right' }}>Status</div>
+              <span className="lp-mock-status-pill lp-mock-status-pill--overdue"><span className="lp-mock-dot" />Forfalt</span>
+            </div>
+          </div>
+          <div className="lp-mock-ac-stats">
+            <div className="lp-mock-ac-stat"><strong>5</strong><span>oppgaver</span></div>
+            <div className="lp-mock-ac-stat"><strong>2/5</strong><span>utført</span></div>
+            <div className="lp-mock-ac-stat"><strong>Forfalt</strong><span>neste forfall</span></div>
+          </div>
+        </div>
+
+        {/* Asset card 2 — Hus */}
+        <div className="lp-mock-asset-card">
+          <div className="lp-mock-ac-top">
+            <div className="lp-mock-ac-thumb">
+              <img {...categoryImgProps('Hus')} alt="" />
+            </div>
+            <div className="lp-mock-ac-info">
+              <div className="lp-mock-ac-name">Enebolig Stavanger</div>
+              <span className="lp-mock-ac-cat">Hus</span>
+            </div>
+          </div>
+          <div className="lp-mock-ac-mid">
+            <div className="lp-mock-ac-next">
+              <div className="lp-mock-ac-lbl">Neste oppgave</div>
+              <div className="lp-mock-ac-task">Rens takrenner · <span className="lp-mock-warning">om 5d</span></div>
+            </div>
+            <div>
+              <div className="lp-mock-ac-lbl" style={{ textAlign: 'right' }}>Status</div>
+              <span className="lp-mock-status-pill lp-mock-status-pill--warning"><span className="lp-mock-dot" />Snart</span>
+            </div>
+          </div>
+          <div className="lp-mock-ac-stats">
+            <div className="lp-mock-ac-stat"><strong>6</strong><span>oppgaver</span></div>
+            <div className="lp-mock-ac-stat"><strong>3/6</strong><span>utført</span></div>
+            <div className="lp-mock-ac-stat"><strong>5 dager</strong><span>neste forfall</span></div>
+          </div>
+        </div>
+
+        {/* Partial third card — implies more content below */}
+        <div className="lp-mock-asset-card lp-mock-asset-card--partial">
+          <div className="lp-mock-ac-top">
+            <div className="lp-mock-ac-thumb">
+              <img {...categoryImgProps('Hytte')} alt="" />
+            </div>
+            <div className="lp-mock-ac-info">
+              <div className="lp-mock-ac-name">Hytte Vrådal</div>
+              <span className="lp-mock-ac-cat">Hytte</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── WrenchIcon inline (avoids importing Icon component) ───────────────────
 function WrenchIcon({ size = 18 }) {
   return (
@@ -436,22 +576,32 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       </nav>
 
       {/* Hero */}
-      <section className="lp-hero">
-        <div className="lp-hero-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          Gratis å komme i gang
+      <section className="lp-hero-section">
+        <div className="lp-hero-inner">
+          {/* Left: text + CTA */}
+          <div className="lp-hero-text">
+            <div className="lp-hero-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Gratis å komme i gang
+            </div>
+            <h1>Unngå dyre skader.<br /><span>Ta vare på<br />tingene dine.</span></h1>
+            <p className="lp-hero-sub">
+              Full oversikt over vedlikeholdet for alt du eier –
+              bil, båt, hus og hytte. Automatiske påminnelser og
+              ferdig vedlikeholdsplan. Færre overraskelser.
+            </p>
+            <div className="lp-hero-ctas">
+              <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang gratis</button>
+              <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
+            </div>
+            <p className="lp-hero-note">Ingen kredittkort. Ingen binding.</p>
+          </div>
+
+          {/* Right: app mockup */}
+          <div className="lp-hero-visual">
+            <AppMockup />
+          </div>
         </div>
-        <h1>Unngå dyre skader.<br /><span>Ta vare på tingene dine.</span></h1>
-        <p className="lp-hero-sub">
-          Maintain gir deg full oversikt over vedlikeholdet for alt du eier –
-          bil, båt, hus og hytte. Automatiske påminnelser, enkel loggføring og
-          ferdig vedlikeholdsplan. Færre overraskelser, lavere kostnader.
-        </p>
-        <div className="lp-hero-ctas">
-          <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang gratis</button>
-          <button className="lp-btn-outline--lg" onClick={onLogin}>Logg inn</button>
-        </div>
-        <p className="lp-hero-note">Ingen kredittkort. Ingen betalingsmur.</p>
       </section>
 
       {/* Demo asset cards */}
