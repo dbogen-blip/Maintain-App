@@ -44,11 +44,12 @@ export default function AssetExport() {
           supabase
             .from('maintenance_logs')
             .select(`
-              id, performed_on, cost, km_reading, notes,
+              id, performed_on, cost, km_reading, notes, skipped,
               task:tasks(id, title),
               attachments:maintenance_log_attachments(id, file_path, file_name, mime_type)
             `)
             .eq('asset_id', assetId)
+            .eq('skipped', false)          // exclude "Tar det neste gang" entries
             // Oldest first — reads like a service book (chronological history)
             .order('performed_on', { ascending: true }),
         ])

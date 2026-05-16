@@ -195,7 +195,7 @@ export default function AssetDetail() {
             *,
             attachments:task_attachments(id, file_path, file_name, mime_type, size_bytes),
             maintenance_logs (
-              id, performed_on, notes, cost, km_reading,
+              id, performed_on, notes, cost, km_reading, skipped,
               attachments:maintenance_log_attachments(id, file_path, file_name, mime_type, size_bytes)
             )
           `)
@@ -375,10 +375,23 @@ export default function AssetDetail() {
                 <h4>Historikk</h4>
                 <ul className="log-list">
                   {task.maintenance_logs.map(log => (
-                    <li key={log.id} className="log-item">
+                    <li key={log.id} className={`log-item${log.skipped ? ' log-item--skipped' : ''}`}>
                       <div className="row" style={{ justifyContent: 'space-between' }}>
-                        <strong>{formatDate(log.performed_on)}</strong>
-                        <span className="muted" style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                        <strong style={{ color: log.skipped ? 'var(--color-text-muted)' : undefined }}>
+                          {formatDate(log.performed_on)}
+                        </strong>
+                        <span className="muted" style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+                          {log.skipped && (
+                            <span style={{
+                              fontSize: 'var(--font-size-xs)',
+                              background: '#fffbeb',
+                              color: '#b45309',
+                              border: '1px solid #fde68a',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '1px 8px',
+                              fontWeight: 'var(--font-weight-medium)',
+                            }}>Utsatt</span>
+                          )}
                           {log.km_reading != null && <span>{formatKm(log.km_reading)}</span>}
                           {log.cost != null && <span>{formatNok(log.cost)}</span>}
                         </span>
