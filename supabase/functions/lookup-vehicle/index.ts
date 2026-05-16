@@ -55,36 +55,44 @@ Deno.serve(async (req) => {
   // EU-kontroll date — returned separately, not in description (becomes a task)
   const eu_date = kd.periodiskKjoretoyKontroll?.kontrollfrist ?? null
 
+  const vekt   = teknisk?.vekter
+  const farge  = teknisk?.karosseriOgLasteplan?.rFarge?.[0]?.kodeNavn ?? ''
+  const effekt = drift?.maksNettoEffekt ? `${drift.maksNettoEffekt} kW` : ''
+  const rekkevidde = teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.wltpKjoretoyspesifikk?.rekkeviddeKmBlandetkjoring
+    ?? teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.rekkeviddeKm
+
+  // Shared weight/colour fields for all vehicle categories
+  // Understellsnummer (VIN/chassis) is intentionally never included
+  const sharedLines = [
+    farge                                    ? `Farge: ${farge}` : '',
+    vekt?.egenvekt                           ? `Egenvekt: ${vekt.egenvekt} kg` : '',
+    vekt?.nyttelast                          ? `Nyttelast: ${vekt.nyttelast} kg` : '',
+    vekt?.tillattTilhengervektMedBrems       ? `Tilhengervekt (med brems): ${vekt.tillattTilhengervektMedBrems} kg` : '',
+    vekt?.tillattTilhengervektUtenBrems      ? `Tilhengervekt (uten brems): ${vekt.tillattTilhengervektUtenBrems} kg` : '',
+  ]
+
   let lines: string[]
 
   if (category === 'Bil') {
-    // Slim description for cars
     lines = [
       `Merke: ${merke}`,
       `Modell: ${modell}`,
       arskode       ? `Årsmodell: ${arskode}` : '',
       drivstoffNavn ? `Drivstoff: ${drivstoffNavn}` : '',
+      effekt        ? `Motoreffekt: ${effekt}` : '',
+      ...sharedLines,
     ].filter(Boolean)
   } else {
-    // Full technical specs for other vehicles (no EU date — it becomes a task)
-    const vekt   = teknisk?.vekter
-    const farge  = teknisk?.karosseriOgLasteplan?.rFarge?.[0]?.kodeNavn ?? ''
-    const effekt = drift?.maksNettoEffekt ? `${drift.maksNettoEffekt} kW` : ''
-    const rekkevidde = teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.wltpKjoretoyspesifikk?.rekkeviddeKmBlandetkjoring
-      ?? teknisk?.miljodata?.miljoOgdrivstoffGruppe?.[0]?.forbrukOgUtslipp?.[0]?.rekkeviddeKm
-
+    // Full technical specs for other vehicles
     lines = [
       `Merke: ${merke}`,
       `Modell: ${modell}`,
       arskode       ? `Årsmodell: ${arskode}` : '',
-      farge         ? `Farge: ${farge}` : '',
       drivstoffNavn ? `Drivstoff: ${drivstoffNavn}` : '',
       effekt        ? `Motoreffekt: ${effekt}` : '',
       rekkevidde    ? `Rekkevidde: ${rekkevidde} km` : '',
-      vekt?.egenvekt         ? `Egenvekt: ${vekt.egenvekt} kg` : '',
+      ...sharedLines,
       vekt?.tillattTotalvekt ? `Tillatt totalvekt: ${vekt.tillattTotalvekt} kg` : '',
-      vekt?.nyttelast        ? `Nyttelast: ${vekt.nyttelast} kg` : '',
-      vekt?.tillattTilhengervektMedBrems ? `Tilhengervekt (med brems): ${vekt.tillattTilhengervektMedBrems} kg` : '',
     ].filter(Boolean)
   }
 
