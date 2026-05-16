@@ -20,6 +20,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Login from './Login.jsx'
+import LandingPage from './LandingPage.jsx'
 import Home from './Home.jsx'
 import AssetDetail from './AssetDetail.jsx'
 
@@ -40,8 +41,9 @@ function RouteLoading() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]           = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [showLogin, setShowLogin] = useState(false)
 
   useEffect(() => {
     // onAuthStateChange fires with INITIAL_SESSION on mount (including when
@@ -62,7 +64,15 @@ export default function App() {
     )
   }
 
-  if (!user) return <Login />
+  if (!user) {
+    if (showLogin) return <Login />
+    return (
+      <LandingPage
+        onGetStarted={() => setShowLogin(true)}
+        onLogin={() => setShowLogin(true)}
+      />
+    )
+  }
 
   // BrowserRouter lives inside the auth gate so all route components can safely
   // call useNavigate() without a "no router" error during the loading/login phase.
