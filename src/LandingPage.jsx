@@ -59,7 +59,7 @@ const DEMO_ASSETS = [
       name: 'HOBBY 490 UL',
       category: 'Campingvogn',
       description: 'Merke: HOBBY\nModell: 490 UL\nÅrsmodell: 2018\nFarge: Hvit\nEgenvekt: 1250 kg\nNyttelast: 180 kg\nTillatt totalvekt: 1430 kg',
-      eu_date: '2026-04-20',
+      eu_date: null,
     },
     tasks: [
       { id: 1, title: 'Kontroller lys og elektrisk',       days: 7,   priority: 2, desc: 'Sjekk bremselys, blinklys, parklys og stikkontakten for rust eller løse ledninger.' },
