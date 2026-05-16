@@ -27,6 +27,7 @@ import PublishModal from './forms/PublishModal'
 import HouseTaskPicker from './HouseTaskPicker'
 import CarTaskPicker from './CarTaskPicker'
 import TrailerTaskPicker from './TrailerTaskPicker'
+import CamperTaskPicker from './CamperTaskPicker'
 import { getTemplateForAsset } from './templates'
 import ConfirmDialog from './components/ConfirmDialog'
 import Toast from './components/Toast'
@@ -581,7 +582,12 @@ export default function AssetDetail() {
               Vedlikeholdskalender
             </Button>
           )}
-          {(asset.category === 'Tilhenger' || asset.category === 'Campingvogn') && (
+          {asset.category === 'Tilhenger' && (
+            <Button variant="secondary" icon="list" onClick={() => setShowHousePicker(true)}>
+              Vedlikeholdskalender
+            </Button>
+          )}
+          {(asset.category === 'Campingvogn' || asset.category === 'Bobil') && (
             <Button variant="secondary" icon="list" onClick={() => setShowHousePicker(true)}>
               Vedlikeholdskalender
             </Button>
@@ -642,8 +648,11 @@ export default function AssetDetail() {
       {showHousePicker && (asset?.category === 'Bil' || asset?.category === 'MC/ATV') && (
         <CarTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
       )}
-      {showHousePicker && (asset?.category === 'Tilhenger' || asset?.category === 'Campingvogn') && (
+      {showHousePicker && asset?.category === 'Tilhenger' && (
         <TrailerTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
+      )}
+      {showHousePicker && (asset?.category === 'Campingvogn' || asset?.category === 'Bobil') && (
+        <CamperTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
       )}
       {showPublish && (
         <PublishModal asset={asset} onClose={() => setShowPublish(false)} onPublished={load} />
