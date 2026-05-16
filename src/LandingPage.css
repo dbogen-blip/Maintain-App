@@ -694,43 +694,45 @@
   /* Text sits above the phone */
   .lp-hero-text { position: relative; z-index: 2; }
 
-  /* Buttons left-aligned so phone peeks out on the right */
-  .lp-hero-ctas { flex-direction: column; align-items: flex-start; }
+  /* Buttons full-width, stacked */
+  .lp-hero-ctas { flex-direction: column; align-items: stretch; }
+  .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
 
   /*
-   * Mobile phone: same design as desktop, absolutely positioned so
-   * it layers behind the headline text and buttons.
-   * right: -20px lets it bleed slightly off screen edge.
-   * top: 96px places it starting roughly at "Ingen overraskelser.".
-   * height clips it so it doesn't extend past "Ingen binding".
+   * Mobile phone: identical design to desktop (same transform),
+   * absolutely positioned on the right, layered behind text/buttons.
+   *
+   * Placement targets the screenshot:
+   *   – starts at "Ingen overraskelser." (~top: 148px)
+   *   – right edge bleeds 14px off screen for natural overflow
+   *   – height clips just at "Ingen binding" line
    */
   .lp-hero-phone-mobile {
     display: block;
     position: absolute;
-    right: -20px;
-    top: 96px;
-    z-index: 1;          /* behind .lp-hero-text */
-    width: 180px;        /* 290 × 0.62 */
-    height: 250px;       /* clip so bottom ≈ "Ingen binding" line */
+    right: -14px;
+    top: 148px;
+    z-index: 1;           /* behind .lp-hero-text (z-index 2) */
+    width: 192px;         /* 290 × 0.662 */
+    height: 272px;
     overflow: hidden;
     border-radius: 30px;
     box-shadow:
-      0 0 0 1.5px rgba(255,255,255,.12),
-      0 28px 56px -12px rgba(0,0,0,.8);
+      0 0 0 1.5px rgba(255,255,255,.13),
+      0 32px 64px -14px rgba(0,0,0,.85);
   }
-  /* Phone itself: identical transform to desktop, scaled down */
   .lp-hero-phone-mobile .lp-phone {
     position: absolute;
     top: 0; left: 0;
     width: 290px;
     max-height: none;
-    transform: perspective(1000px) rotateY(-8deg) rotateX(2deg) scale(0.62);
+    /* Same tilt as desktop */
+    transform: perspective(1000px) rotateY(-8deg) rotateX(2deg) scale(0.662);
     transform-origin: top left;
     box-shadow: none;
   }
-  /* Fade toward hero background at the bottom */
   .lp-hero-phone-mobile .lp-phone::after {
-    background: linear-gradient(transparent 50%, #0f172a 100%);
+    background: linear-gradient(transparent 55%, #0f172a 100%);
   }
 
   .lp-ba-grid { grid-template-columns: 1fr; gap: var(--space-4); }
