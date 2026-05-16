@@ -543,7 +543,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         </div>
         <div className="lp-nav-actions">
           <button className="lp-btn-ghost" onClick={onLogin}>Logg inn</button>
-          <button className="lp-btn-primary" onClick={onGetStarted}>Gratis – kom i gang</button>
+          <button className="lp-btn-primary" onClick={onGetStarted}>Kom i gang!</button>
         </div>
       </nav>
 
