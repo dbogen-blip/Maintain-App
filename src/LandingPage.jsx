@@ -136,16 +136,21 @@ const STEPS = [
 ]
 
 const CATEGORY_CARDS = [
-  { name: 'Bil',              category: 'Bil' },
-  { name: 'Hus',              category: 'Hus' },
-  { name: 'Hytte',            category: 'Hytte' },
-  { name: 'MC / ATV',         category: 'MC/ATV' },
-  { name: 'Båt',              category: 'Båt' },
-  { name: 'Campingvogn',      category: 'Campingvogn' },
-  { name: 'Hage',             category: 'Hage' },
-  { name: 'Bobil',            category: 'Bobil' },
-  { name: 'Sykkel',           category: 'Sykkel' },
-  { name: 'Traktor / Maskin', category: 'Traktor/Maskin' },
+  { name: 'Bil',               category: 'Bil' },
+  { name: 'Hus',               category: 'Hus' },
+  { name: 'Leilighet',         category: 'Leilighet' },
+  { name: 'Hytte',             category: 'Hytte' },
+  { name: 'Hage',              category: 'Hage' },
+  { name: 'Båt',               category: 'Båt' },
+  { name: 'Bobil',             category: 'Bobil' },
+  { name: 'Campingvogn',       category: 'Campingvogn' },
+  { name: 'MC / ATV',          category: 'MC/ATV' },
+  { name: 'Sykkel',            category: 'Sykkel' },
+  { name: 'Tilhenger',         category: 'Tilhenger' },
+  { name: 'Traktor / Maskin',  category: 'Traktor/Maskin' },
+  { name: 'El-verktøy',        category: 'Elektriske og manuelle verktøy' },
+  { name: 'Bensindrevet verktøy', category: 'Bensindrevne verktøy' },
+  { name: 'Annet',             category: 'Annet' },
 ]
 
 const BEFORE = ['Glemte servicer', 'Dyre overraskelser', 'Lite oversikt', 'Stress og usikkerhet']
@@ -604,7 +609,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <h2 className="lp-h2">Trykk på en eiendel</h2>
           <p className="lp-sub">Klikk for å se vedlikeholdsplan, oppgaver og automatisk reg.nr.-oppslag fra Statens vegvesen.</p>
           <div className="lp-bigcard-grid">
-            {DEMO_ASSETS.filter(a => a.id === 'bil' || a.id === 'hus').map(a => (
+            {DEMO_ASSETS.filter(a => ['bil', 'hus', 'hage'].includes(a.id)).map(a => (
               <LandingDemoCard key={a.id} asset={a} onClick={() => setActiveDemo(a)} />
             ))}
           </div>

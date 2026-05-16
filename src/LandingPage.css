@@ -302,10 +302,10 @@
 /* ── Big demo cards ────────────────────────────────────────── */
 .lp-bigcard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 28px;
   margin-top: var(--space-10);
-  max-width: 760px;
+  max-width: 960px;
 }
 .lp-bigcard {
   background: #fff; border-radius: 24px;
@@ -316,7 +316,7 @@
 }
 .lp-bigcard:hover  { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,.13), 0 4px 8px rgba(0,0,0,.06); }
 .lp-bigcard:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
-.lp-bigcard-img { width: 100%; aspect-ratio: 16/7; overflow: hidden; background: #f1f5f9; }
+.lp-bigcard-img { width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #f1f5f9; }
 .lp-bigcard-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
 .lp-bigcard:hover .lp-bigcard-img img { transform: scale(1.03); }
 
@@ -435,8 +435,8 @@
 
 /* ── Category cards ────────────────────────────────────────── */
 .lp-catcard-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 16px; margin-top: var(--space-10);
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px; margin-top: var(--space-10);
 }
 .lp-catcard {
   border-radius: 16px; overflow: hidden;
