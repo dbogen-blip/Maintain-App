@@ -39,6 +39,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
     priority:       task?.priority      ?? 2,
     description:    task?.description   ?? '',
     notes:          task?.notes         ?? '',
+    tips:           task?.tips          ?? '',
   })
   const [fixedDates, setFixedDates] = useState(task?.fixed_due_date ? [task.fixed_due_date] : [''])
   // null = one-time, number = repeats every N years after completion
@@ -128,6 +129,7 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
         priority:    Number(form.priority),
         description: form.description || null,
         notes:       form.notes       || null,
+        tips:        form.tips        || null,
       }
       if (!base.title) throw new Error('Tittel er påkrevd')
 
@@ -448,12 +450,21 @@ export default function TaskForm({ assetId, task, assetCategory, onClose, onSave
       />
 
       <Textarea
-        label="Notater"
-        placeholder="Korte notater"
+        label="Utstyr til vedlikehold"
+        placeholder="Hva trenger du? f.eks. skrunøkkel, oljefilter, smørefett ..."
         value={form.notes}
         onChange={e => setField('notes', e.target.value)}
         rows={2}
         maxLength={300}
+      />
+
+      <Textarea
+        label="Kjekt å ha"
+        placeholder="Tips, advarsler, nyttig info ..."
+        value={form.tips}
+        onChange={e => setField('tips', e.target.value)}
+        rows={2}
+        maxLength={500}
       />
 
       <div className="field">

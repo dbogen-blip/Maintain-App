@@ -26,6 +26,7 @@ import LogForm from './forms/LogForm'
 import PublishModal from './forms/PublishModal'
 import HouseTaskPicker from './HouseTaskPicker'
 import CarTaskPicker from './CarTaskPicker'
+import TrailerTaskPicker from './TrailerTaskPicker'
 import { getTemplateForAsset } from './templates'
 import ConfirmDialog from './components/ConfirmDialog'
 import Toast from './components/Toast'
@@ -357,8 +358,15 @@ export default function AssetDetail() {
 
             {task.notes && (
               <div className="task-section">
-                <h4>Notater</h4>
+                <h4>Utstyr til vedlikehold</h4>
                 <p style={{ whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{task.notes}</p>
+              </div>
+            )}
+
+            {task.tips && (
+              <div className="task-section">
+                <h4>Kjekt å ha</h4>
+                <p style={{ whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{task.tips}</p>
               </div>
             )}
 
@@ -560,6 +568,11 @@ export default function AssetDetail() {
               Vedlikeholdskalender
             </Button>
           )}
+          {(asset.category === 'Tilhenger' || asset.category === 'Campingvogn') && (
+            <Button variant="secondary" icon="list" onClick={() => setShowHousePicker(true)}>
+              Vedlikeholdskalender
+            </Button>
+          )}
           <Button icon="plus" onClick={() => setEditTask({})}>Ny oppgave</Button>
         </div>
       </div>
@@ -615,6 +628,9 @@ export default function AssetDetail() {
       )}
       {showHousePicker && (asset?.category === 'Bil' || asset?.category === 'MC/ATV') && (
         <CarTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
+      )}
+      {showHousePicker && (asset?.category === 'Tilhenger' || asset?.category === 'Campingvogn') && (
+        <TrailerTaskPicker assetId={assetId} onClose={() => setShowHousePicker(false)} onSaved={load} />
       )}
       {showPublish && (
         <PublishModal asset={asset} onClose={() => setShowPublish(false)} onPublished={load} />
