@@ -10,8 +10,13 @@ const DEMO_ASSETS = [
     id: 'bil',
     name: 'Toyota RAV4',
     category: 'Bil',
-    regnr: 'EK14321',
-    vehicleInfo: 'Årsmodell 2019 · Bensin · Farge: Hvit · Egenvekt: 1560 kg · Tilhengervekt (m/brems): 1800 kg',
+    regnr: 'AB12345',
+    vehicleMockResult: {
+      name: 'TOYOTA RAV4',
+      category: 'Bil',
+      description: 'Merke: TOYOTA\nModell: RAV4\nÅrsmodell: 2019\nDrivstoff: Bensin\nFarge: Hvit\nEgenvekt: 1560 kg\nTilhengervekt (med brems): 1800 kg\nTilhengervekt (uten brems): 750 kg',
+      eu_date: '2025-09-15',
+    },
     tasks: [
       { id: 1, title: 'EU-kontroll',                       days: -5,  priority: 1, desc: 'Periodisk kjøretøykontroll. Dato hentet automatisk fra Statens vegvesen ved opprettelse.' },
       { id: 2, title: 'Skifte motorolje og filter',         days: 45,  priority: 1, desc: 'Anbefalt hvert 15 000 km eller 1 år. Forhindrer slitasje og motorskade.' },
@@ -49,6 +54,13 @@ const DEMO_ASSETS = [
     id: 'campingvogn',
     name: 'Hobby 490 UL',
     category: 'Campingvogn',
+    regnr: 'AB1234',
+    vehicleMockResult: {
+      name: 'HOBBY 490 UL',
+      category: 'Campingvogn',
+      description: 'Merke: HOBBY\nModell: 490 UL\nÅrsmodell: 2018\nFarge: Hvit\nEgenvekt: 1250 kg\nNyttelast: 180 kg\nTillatt totalvekt: 1430 kg',
+      eu_date: '2026-04-20',
+    },
     tasks: [
       { id: 1, title: 'Kontroller lys og elektrisk',       days: 7,   priority: 2, desc: 'Sjekk bremselys, blinklys, parklys og stikkontakten for rust eller løse ledninger.' },
       { id: 2, title: 'Sjekk dekk og hjul',                days: 7,   priority: 2, desc: 'Lufttrykk, mønster, tørrråte og etterstram hjulmutre.' },
@@ -113,12 +125,12 @@ function nextTask(tasks) {
 }
 
 // ── Reg.nr.-oppslagskomponent (fungerende API-kall) ───────────────────────
-function RegnrDemo() {
-  const [regnr, setRegnr]   = useState('EK14321')
-  const [result, setResult] = useState(null)
+function RegnrDemo({ initialRegnr = '', mockResult = null }) {
+  const [regnr, setRegnr]     = useState(initialRegnr)
+  const [result, setResult]   = useState(mockResult)   // pre-filled for demo
   const [loading, setLoading] = useState(false)
-  const [error, setError]   = useState(null)
-  const [tried, setTried]   = useState(false)
+  const [error, setError]     = useState(null)
+  const [tried, setTried]     = useState(!!mockResult)
 
   async function lookup() {
     const nr = regnr.trim().toUpperCase().replace(/\s/g, '')
@@ -239,7 +251,9 @@ function DemoDetailModal({ asset, onClose }) {
           </div>
 
           {/* Reg.nr.-demo for vehicles */}
-          {isVehicle && asset.regnr && <RegnrDemo />}
+          {isVehicle && asset.regnr && (
+            <RegnrDemo initialRegnr={asset.regnr} mockResult={asset.vehicleMockResult ?? null} />
+          )}
 
           {/* Task groups */}
           <div className="lp-modal-tasks">
