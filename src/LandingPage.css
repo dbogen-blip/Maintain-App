@@ -166,11 +166,7 @@
 /* Desktop right column */
 .lp-hero-visual { display: flex; justify-content: center; align-items: flex-start; }
 
-/* Bottom row: on desktop just passthrough, on mobile becomes two-col */
-.lp-hero-bottom-row { display: contents; } /* no layout effect on desktop */
-.lp-hero-cta-left   { display: contents; } /* no layout effect on desktop */
-
-/* Mobile phone wrapper — hidden on desktop */
+/* Mobile phone — hidden on desktop */
 .lp-hero-phone-mobile { display: none; }
 
 /* ── Phone frame ───────────────────────────────────────────── */
@@ -685,55 +681,56 @@
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Hero: single column, desktop phone hidden */
+  /* Hero: single column */
   .lp-hero-inner {
     grid-template-columns: 1fr;
     padding: 56px var(--space-4) 52px;
     gap: 0;
+    position: relative; /* anchor for absolutely positioned phone */
   }
+  /* Hide the desktop right-column phone */
   .lp-hero-visual { display: none; }
 
-  /* Bottom row: flex with buttons on left, small phone on right */
-  .lp-hero-bottom-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-    width: 100%;
-  }
-  .lp-hero-cta-left {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-  }
-  /* Buttons stack and fill the left column */
-  .lp-hero-ctas { flex-direction: column; align-items: stretch; margin-bottom: var(--space-3); }
-  .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
+  /* Text sits above the phone */
+  .lp-hero-text { position: relative; z-index: 2; }
 
-  /* Compact phone on the right */
+  /* Buttons left-aligned so phone peeks out on the right */
+  .lp-hero-ctas { flex-direction: column; align-items: flex-start; }
+
+  /*
+   * Mobile phone: same design as desktop, absolutely positioned so
+   * it layers behind the headline text and buttons.
+   * right: -20px lets it bleed slightly off screen edge.
+   * top: 96px places it starting roughly at "Ingen overraskelser.".
+   * height clips it so it doesn't extend past "Ingen binding".
+   */
   .lp-hero-phone-mobile {
     display: block;
-    flex-shrink: 0;
-    width: 138px;   /* 290 × 0.476 */
-    height: 230px;
+    position: absolute;
+    right: -20px;
+    top: 96px;
+    z-index: 1;          /* behind .lp-hero-text */
+    width: 180px;        /* 290 × 0.62 */
+    height: 250px;       /* clip so bottom ≈ "Ingen binding" line */
     overflow: hidden;
-    position: relative;
-    border-radius: 28px;
+    border-radius: 30px;
     box-shadow:
-      0 0 0 1px rgba(255,255,255,.1),
-      0 20px 40px -8px rgba(0,0,0,.7);
+      0 0 0 1.5px rgba(255,255,255,.12),
+      0 28px 56px -12px rgba(0,0,0,.8);
   }
+  /* Phone itself: identical transform to desktop, scaled down */
   .lp-hero-phone-mobile .lp-phone {
     position: absolute;
     top: 0; left: 0;
     width: 290px;
     max-height: none;
-    transform: perspective(600px) rotateY(-8deg) rotateX(3deg) scale(0.476);
+    transform: perspective(1000px) rotateY(-8deg) rotateX(2deg) scale(0.62);
     transform-origin: top left;
     box-shadow: none;
   }
+  /* Fade toward hero background at the bottom */
   .lp-hero-phone-mobile .lp-phone::after {
-    background: linear-gradient(transparent 45%, #0f172a 100%);
+    background: linear-gradient(transparent 50%, #0f172a 100%);
   }
 
   .lp-ba-grid { grid-template-columns: 1fr; gap: var(--space-4); }
