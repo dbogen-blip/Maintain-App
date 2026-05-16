@@ -46,13 +46,15 @@ Deno.serve(async (req) => {
   //  - spesialkarosseriTekst 'campingbil' → Bobil (belt-and-suspenders)
   //  - typeKode O* (trailer/semi) with camping body text → Campingvogn
   //  - typeKode O* without camping body → Tilhenger
-  //  - typeKode L* → MC/ATV
+  //  - typeKode L* (EU) or MC* (old Norwegian) → MC/ATV
+  //  - typeKode T* or C* (EU tractor) or contains 'TRAKTOR' → Traktor/Maskin
   //  - everything else motorized → Bil
   let category = 'Bil'
   if (spesialKode === 'SA' || spesial === 'campingbil') category = 'Bobil'
   else if (/^O/.test(typeKode) && spesial.includes('camping')) category = 'Campingvogn'
-  else if (/^L/.test(typeKode))                         category = 'MC/ATV'
   else if (/^O/.test(typeKode))                         category = 'Tilhenger'
+  else if (/^L/i.test(typeKode) || /^MC/i.test(typeKode)) category = 'MC/ATV'
+  else if (/^T/i.test(typeKode) || /^C[1-5]/i.test(typeKode) || /traktor/i.test(typeKode)) category = 'Traktor/Maskin'
 
   const motor         = teknisk?.motorOgDrivverk?.motor?.[0]
   const drift         = motor?.drivstoff?.[0]
