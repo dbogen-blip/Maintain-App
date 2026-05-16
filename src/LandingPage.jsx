@@ -556,17 +556,22 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               Automatiske påminnelser.<br />
               <span>Ingen overraskelser.</span>
             </h1>
-            <div className="lp-hero-ctas">
-              <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
-              <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
-            </div>
-            <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
-            {/* Mobile-only: compact phone below note */}
-            <div className="lp-hero-phone-mobile">
-              <AppMockup />
+            {/* On mobile this row splits: buttons left, phone right */}
+            <div className="lp-hero-bottom-row">
+              <div className="lp-hero-cta-left">
+                <div className="lp-hero-ctas">
+                  <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
+                  <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
+                </div>
+                <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
+              </div>
+              {/* Compact phone — hidden on desktop, shown on mobile */}
+              <div className="lp-hero-phone-mobile">
+                <AppMockup />
+              </div>
             </div>
           </div>
-          {/* Right: desktop-only full-size phone */}
+          {/* Right column: full-size phone — desktop only */}
           <div className="lp-hero-visual">
             <AppMockup />
           </div>

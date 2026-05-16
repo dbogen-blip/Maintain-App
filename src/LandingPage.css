@@ -166,37 +166,12 @@
 /* Desktop right column */
 .lp-hero-visual { display: flex; justify-content: center; align-items: flex-start; }
 
-/* Mobile-only small phone — hidden on desktop */
-.lp-hero-phone-mobile { display: none; }
+/* Bottom row: on desktop just passthrough, on mobile becomes two-col */
+.lp-hero-bottom-row { display: contents; } /* no layout effect on desktop */
+.lp-hero-cta-left   { display: contents; } /* no layout effect on desktop */
 
-/* ── Shared small-phone styles (mobile hero) ───────────────── */
-.lp-hero-phone-mobile {
-  margin-top: var(--space-8);
-  /* wrapper clips the scaled phone */
-  width: 180px;    /* 290 × 0.62 */
-  height: 270px;
-  overflow: hidden;
-  position: relative;
-  border-radius: 32px;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.1),
-    0 24px 48px -8px rgba(0,0,0,.7);
-  align-self: flex-start;
-}
-.lp-hero-phone-mobile .lp-phone {
-  position: absolute;
-  top: 0; left: 0;
-  width: 290px;
-  max-height: none;
-  /* slight tilt to match desktop aesthetic */
-  transform: perspective(700px) rotateY(-7deg) rotateX(2deg) scale(0.62);
-  transform-origin: top left;
-  box-shadow: none;
-}
-/* Fade toward hero bg colour */
-.lp-hero-phone-mobile .lp-phone::after {
-  background: linear-gradient(transparent 50%, #0f172a 100%);
-}
+/* Mobile phone wrapper — hidden on desktop */
+.lp-hero-phone-mobile { display: none; }
 
 /* ── Phone frame ───────────────────────────────────────────── */
 .lp-phone {
@@ -710,17 +685,56 @@
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Hero: single column, show small phone, hide big phone */
+  /* Hero: single column, desktop phone hidden */
   .lp-hero-inner {
     grid-template-columns: 1fr;
-    padding: 56px var(--space-4) 48px;
+    padding: 56px var(--space-4) 52px;
     gap: 0;
   }
-  .lp-hero-visual { display: none; }       /* hide full-size phone */
-  .lp-hero-phone-mobile { display: block; } /* show compact phone */
+  .lp-hero-visual { display: none; }
 
-  .lp-hero-ctas { flex-direction: column; align-items: stretch; }
+  /* Bottom row: flex with buttons on left, small phone on right */
+  .lp-hero-bottom-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    width: 100%;
+  }
+  .lp-hero-cta-left {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  /* Buttons stack and fill the left column */
+  .lp-hero-ctas { flex-direction: column; align-items: stretch; margin-bottom: var(--space-3); }
   .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
+
+  /* Compact phone on the right */
+  .lp-hero-phone-mobile {
+    display: block;
+    flex-shrink: 0;
+    width: 138px;   /* 290 × 0.476 */
+    height: 230px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 28px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.1),
+      0 20px 40px -8px rgba(0,0,0,.7);
+  }
+  .lp-hero-phone-mobile .lp-phone {
+    position: absolute;
+    top: 0; left: 0;
+    width: 290px;
+    max-height: none;
+    transform: perspective(600px) rotateY(-8deg) rotateX(3deg) scale(0.476);
+    transform-origin: top left;
+    box-shadow: none;
+  }
+  .lp-hero-phone-mobile .lp-phone::after {
+    background: linear-gradient(transparent 45%, #0f172a 100%);
+  }
 
   .lp-ba-grid { grid-template-columns: 1fr; gap: var(--space-4); }
   .lp-ba-divider { display: none; }
