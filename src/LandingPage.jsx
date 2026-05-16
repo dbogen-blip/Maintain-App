@@ -545,6 +545,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       {/* ── Hero (dark navy) ── */}
       <section className="lp-hero-section">
         <div className="lp-hero-inner">
+          {/* Left: text + CTAs */}
           <div className="lp-hero-text">
             <div className="lp-hero-badge">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -555,18 +556,19 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               Automatiske påminnelser.<br />
               <span>Ingen overraskelser.</span>
             </h1>
-            <div className="lp-hero-cta-area">
-              <div className="lp-hero-cta-left">
-                <div className="lp-hero-ctas">
-                  <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
-                  <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
-                </div>
-                <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
-              </div>
-              <div className="lp-hero-phone-wrap">
-                <AppMockup />
-              </div>
+            <div className="lp-hero-ctas">
+              <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
+              <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
             </div>
+            <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
+            {/* Mobile-only: compact phone below note */}
+            <div className="lp-hero-phone-mobile">
+              <AppMockup />
+            </div>
+          </div>
+          {/* Right: desktop-only full-size phone */}
+          <div className="lp-hero-visual">
+            <AppMockup />
           </div>
         </div>
       </section>

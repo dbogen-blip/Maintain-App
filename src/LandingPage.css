@@ -140,9 +140,10 @@
   pointer-events: none;
 }
 .lp-hero-inner {
-  max-width: 860px; margin: 0 auto;
-  padding: 72px var(--space-6) 64px;
-  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: 88px var(--space-6) 80px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 64px;
+  align-items: center; position: relative; z-index: 1;
 }
 .lp-hero-text { display: flex; flex-direction: column; align-items: flex-start; }
 .lp-hero-badge {
@@ -159,47 +160,42 @@
   margin-bottom: var(--space-8);
 }
 .lp-hero-text h1 span { color: #818cf8; }
-
-/* CTA row: buttons on left, small phone on right */
-.lp-hero-cta-area {
-  display: flex;
-  align-items: flex-start;
-  gap: 40px;
-  width: 100%;
-}
-.lp-hero-cta-left {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  flex: 1;
-}
-.lp-hero-ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.lp-hero-ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-4); }
 .lp-hero-note { font-size: var(--font-size-xs); color: rgba(255,255,255,.3); }
 
-/* Small phone mockup next to CTAs */
-.lp-hero-phone-wrap {
-  width: 155px;   /* 290 × 0.534 */
-  height: 220px;  /* cropped to roughly CTA block height */
+/* Desktop right column */
+.lp-hero-visual { display: flex; justify-content: center; align-items: flex-start; }
+
+/* Mobile-only small phone — hidden on desktop */
+.lp-hero-phone-mobile { display: none; }
+
+/* ── Shared small-phone styles (mobile hero) ───────────────── */
+.lp-hero-phone-mobile {
+  margin-top: var(--space-8);
+  /* wrapper clips the scaled phone */
+  width: 180px;    /* 290 × 0.62 */
+  height: 270px;
   overflow: hidden;
   position: relative;
-  flex-shrink: 0;
-  border-radius: 28px;
-  /* subtle outer glow */
-  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 20px 40px -8px rgba(0,0,0,.6);
+  border-radius: 32px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.1),
+    0 24px 48px -8px rgba(0,0,0,.7);
+  align-self: flex-start;
 }
-.lp-hero-phone-wrap .lp-phone {
+.lp-hero-phone-mobile .lp-phone {
   position: absolute;
   top: 0; left: 0;
-  /* scale down to fit wrapper width (290 → 155 = ×0.534) */
-  transform: perspective(600px) rotateY(-4deg) scale(0.534);
+  width: 290px;
+  max-height: none;
+  /* slight tilt to match desktop aesthetic */
+  transform: perspective(700px) rotateY(-7deg) rotateX(2deg) scale(0.62);
   transform-origin: top left;
-  max-height: none; /* override 600px cap */
-  width: 290px;     /* explicit so scaling math is predictable */
-  box-shadow: none; /* outer shadow is on wrapper */
+  box-shadow: none;
 }
-/* Fade the phone out at the bottom toward the hero bg */
-.lp-hero-phone-wrap .lp-phone::after {
-  background: linear-gradient(transparent 40%, #0f172a 100%);
+/* Fade toward hero bg colour */
+.lp-hero-phone-mobile .lp-phone::after {
+  background: linear-gradient(transparent 50%, #0f172a 100%);
 }
 
 /* ── Phone frame ───────────────────────────────────────────── */
@@ -714,12 +710,18 @@
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .lp-hero-inner { padding: 56px var(--space-4) 48px; }
-  /* Hide the small phone on mobile — text + CTAs fill the full width */
-  .lp-hero-phone-wrap { display: none; }
-  .lp-hero-cta-area { flex-direction: column; gap: var(--space-5); }
+  /* Hero: single column, show small phone, hide big phone */
+  .lp-hero-inner {
+    grid-template-columns: 1fr;
+    padding: 56px var(--space-4) 48px;
+    gap: 0;
+  }
+  .lp-hero-visual { display: none; }       /* hide full-size phone */
+  .lp-hero-phone-mobile { display: block; } /* show compact phone */
+
   .lp-hero-ctas { flex-direction: column; align-items: stretch; }
   .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
+
   .lp-ba-grid { grid-template-columns: 1fr; gap: var(--space-4); }
   .lp-ba-divider { display: none; }
   .lp-inner--stats { flex-direction: column; }
