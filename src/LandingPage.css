@@ -681,59 +681,51 @@
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Hero: single column */
+  /* Hero: single column, phone sits below CTAs in normal flow */
   .lp-hero-inner {
     grid-template-columns: 1fr;
-    padding: 56px var(--space-4) 52px;
+    padding: 56px var(--space-4) 0;  /* bottom-0: phone closes the section */
     gap: 0;
-    position: relative; /* anchor for absolutely positioned phone */
   }
-  /* Hide the desktop right-column phone */
   .lp-hero-visual { display: none; }
-
-  /* Text sits above the phone */
-  .lp-hero-text { position: relative; z-index: 2; }
 
   /* Buttons full-width, stacked */
   .lp-hero-ctas { flex-direction: column; align-items: stretch; }
   .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
 
   /*
-   * Mobile phone: identical design to desktop (same transform),
-   * absolutely positioned on the right, layered behind text/buttons.
-   *
-   * Placement targets the screenshot:
-   *   – starts at "Ingen overraskelser." (~top: 148px)
-   *   – right edge bleeds 14px off screen for natural overflow
-   *   – height clips just at "Ingen binding" line
+   * Mobile phone — in normal flow, centered, below "Ingen binding".
+   * Uses mask-image for a smooth dissolve instead of a hard overflow clip.
+   * scale(0.759): 290×0.759 = 220px — fills ~56 % of a 390px screen.
    */
   .lp-hero-phone-mobile {
     display: block;
-    position: absolute;
-    right: -14px;
-    top: 148px;
-    z-index: 1;           /* behind .lp-hero-text (z-index 2) */
-    width: 192px;         /* 290 × 0.662 */
-    height: 272px;
+    /* Center within the hero text column */
+    margin: 36px auto 0;
+    /* Wrapper matches the scaled phone width */
+    width: 220px;          /* 290 × 0.759 */
+    height: 390px;
     overflow: hidden;
-    border-radius: 30px;
-    box-shadow:
-      0 0 0 1.5px rgba(255,255,255,.13),
-      0 32px 64px -14px rgba(0,0,0,.85);
+    position: relative;
+    /* Smooth bottom fade — no hard edge */
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    mask-image:         linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
   }
   .lp-hero-phone-mobile .lp-phone {
     position: absolute;
     top: 0; left: 0;
     width: 290px;
     max-height: none;
-    /* Same tilt as desktop */
-    transform: perspective(1000px) rotateY(-8deg) rotateX(2deg) scale(0.662);
+    /* Same tilt + shadows as the desktop phone */
+    transform: perspective(1000px) rotateY(-8deg) rotateX(2deg) scale(0.759);
     transform-origin: top left;
-    box-shadow: none;
+    box-shadow:
+      0 0 0 1.5px rgba(255,255,255,.12),
+      0 40px 80px -16px rgba(0,0,0,.7),
+      0 16px 32px -8px rgba(0,0,0,.5);
   }
-  .lp-hero-phone-mobile .lp-phone::after {
-    background: linear-gradient(transparent 55%, #0f172a 100%);
-  }
+  /* Disable the phone's own built-in fade — the mask handles it */
+  .lp-hero-phone-mobile .lp-phone::after { display: none; }
 
   .lp-ba-grid { grid-template-columns: 1fr; gap: var(--space-4); }
   .lp-ba-divider { display: none; }
