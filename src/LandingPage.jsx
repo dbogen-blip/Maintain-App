@@ -565,7 +565,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang</button>
               <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
             </div>
-            <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
           </div>
 
           {/* Desktop right column: full-size phone */}
