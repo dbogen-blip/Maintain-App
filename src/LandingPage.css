@@ -689,8 +689,8 @@
   }
   .lp-hero-visual { display: none; }
 
-  /* Buttons full-width, stacked */
-  .lp-hero-ctas { flex-direction: column; align-items: stretch; }
+  /* Buttons side by side, centered */
+  .lp-hero-ctas { flex-direction: row; flex-wrap: wrap; }
   .lp-btn-primary--lg, .lp-btn-outline--lg { text-align: center; }
 
   /*
@@ -736,8 +736,9 @@
 }
 @media (max-width: 640px) {
   .lp-nav { padding: 0 var(--space-4); }
-  /* Nav buttons: same height as the 32px logo icon */
-  .lp-nav-actions .lp-btn-ghost,
+  /* Nav: hide "Logg inn" — only show "Kom i gang!" */
+  .lp-nav-actions .lp-btn-ghost { display: none; }
+  /* Nav button: same height as the 32px logo icon */
   .lp-nav-actions .lp-btn-primary {
     height: 32px;
     padding: 0 12px;
