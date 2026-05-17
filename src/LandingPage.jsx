@@ -549,17 +549,17 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* ── Hero (dark navy) ── */}
       <section className="lp-hero-section">
+        <div className="lp-hero-noise" aria-hidden="true" />
         <div className="lp-hero-inner">
           {/* Left: text + CTAs */}
           <div className="lp-hero-text">
             <div className="lp-hero-badge">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              Gratis å komme i gang
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              For bolig, bil, båt og mer
             </div>
             <h1>
-              Smarte vedlikeholdsplaner.<br />
-              Automatiske påminnelser.<br />
-              <span>Ingen overraskelser.</span>
+              Alt du eier.<br />
+              <span>Alltid vedlikeholdt.</span>
             </h1>
             <div className="lp-hero-ctas">
               <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang</button>
@@ -573,8 +573,16 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             <AppMockup />
           </div>
 
-          {/* Mobile only: same phone, absolutely positioned behind text */}
+          {/* Mobile only: phone with glow + floating notification bubbles */}
           <div className="lp-hero-phone-mobile">
+            <div className="lp-hero-phone-glow" aria-hidden="true" />
+            <div className="lp-fb lp-fb--1">
+              <span className="lp-fb-dot lp-fb-dot--green" />
+              Påminnelse sendt ✓
+            </div>
+            <div className="lp-fb lp-fb--2">
+              🚗 EU-kontroll om 5 dager
+            </div>
             <AppMockup />
           </div>
         </div>
