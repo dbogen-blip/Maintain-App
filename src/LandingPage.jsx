@@ -148,7 +148,6 @@ const CATEGORY_CARDS = [
   { name: 'Sykkel',            category: 'Sykkel' },
   { name: 'Tilhenger',         category: 'Tilhenger' },
   { name: 'Traktor / Maskin',  category: 'Traktor/Maskin' },
-  { name: 'El-verktøy',        category: 'Elektriske og manuelle verktøy' },
   { name: 'Bensindrevet verktøy', category: 'Bensindrevne verktøy' },
   { name: 'Annet',             category: 'Annet' },
 ]
