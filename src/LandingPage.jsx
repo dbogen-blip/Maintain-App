@@ -562,7 +562,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <span>Ingen overraskelser.</span>
             </h1>
             <div className="lp-hero-ctas">
-              <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang – gratis</button>
+              <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>Kom i gang</button>
               <button className="lp-btn-outline--lg lp-btn-outline--light" onClick={onLogin}>Logg inn</button>
             </div>
             <p className="lp-hero-note">Ingen kredittkort · Ingen binding</p>
@@ -596,7 +596,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <div className="lp-forgotten-answer">
             <p>Maintain husker det for deg.</p>
             <button className="lp-btn-primary lp-btn-primary--lg" onClick={onGetStarted}>
-              Kom i gang gratis
+              Kom i gang
             </button>
           </div>
         </div>
@@ -711,7 +711,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <h2>Ta kontroll i dag.</h2>
         <p>Legg til din første eiendel på under 5 minutter.</p>
         <div className="lp-hero-ctas" style={{ justifyContent: 'center' }}>
-          <button className="lp-btn-primary lp-btn-primary--lg lp-btn-primary--inv" onClick={onGetStarted}>Kom i gang – gratis</button>
+          <button className="lp-btn-primary lp-btn-primary--lg lp-btn-primary--inv" onClick={onGetStarted}>Kom i gang</button>
           <button className="lp-btn-outline--lg lp-cta-login-btn" onClick={onLogin}>Logg inn</button>
         </div>
         <p className="lp-cta-note">Ingen kredittkort · Ingen binding</p>
